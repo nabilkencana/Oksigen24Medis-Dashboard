@@ -575,19 +575,49 @@ export default function ReportsPage() {
               </Card>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Distribusi Kategori Biaya Pengeluaran</CardTitle>
-                <CardDescription>Pembagian persentase dana pengeluaran kas operasional</CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-center items-center py-6">
-                {expenseBreakdown.length > 0 ? (
-                  <DonutChart data={expenseBreakdown} />
-                ) : (
-                  <p className="text-xs text-muted-foreground py-10">Belum ada pengeluaran kas disetujui dalam rentang waktu ini.</p>
-                )}
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Category Donut (Left) */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Distribusi Kategori Biaya Pengeluaran</CardTitle>
+                  <CardDescription>Pembagian persentase dana pengeluaran kas operasional</CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center py-6">
+                  {expenseBreakdown.length > 0 ? (
+                    <DonutChart data={expenseBreakdown} />
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-10">Belum ada pengeluaran kas disetujui dalam rentang waktu ini.</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Rincian Lain-lain (Right) */}
+              <Card className="lg:col-span-1 flex flex-col justify-between">
+                <CardHeader>
+                  <CardTitle>Rincian Pengeluaran Lain-lain</CardTitle>
+                  <CardDescription>Detail pengeluaran dari kategori Lain-lain.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-between">
+                  <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+                    {dateFilteredExpenses.filter(e => e.category === 'Other').length > 0 ? (
+                      dateFilteredExpenses
+                        .filter(e => e.category === 'Other')
+                        .map(e => (
+                          <div key={e.id} className="flex justify-between items-start text-xs border-b border-border/40 pb-2 last:border-0 last:pb-0">
+                            <div className="space-y-0.5 max-w-[70%]">
+                              <p className="font-semibold text-foreground leading-snug">{e.description}</p>
+                              <p className="text-4xs text-muted-foreground">{e.date}</p>
+                            </div>
+                            <span className="text-rose-500 font-bold shrink-0">{formatRupiah(e.amount)}</span>
+                          </div>
+                        ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground py-10 text-center">Tidak ada pengeluaran Lain-lain dalam periode ini.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
 

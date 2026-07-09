@@ -121,3 +121,54 @@ body {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
+
+/* Print optimization */
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+  body, html, main {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  aside, 
+  header, 
+  nav,
+  button,
+  .no-print,
+  [role="button"] {
+    display: none !important;
+  }
+  
+  .card, div[class*="bg-card"], div[class*="rounded-"] {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+  }
+
+  th {
+    background-color: #ffff00 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: black !important;
+    border: 1.5px solid #000000 !important;
+    padding: 6px !important;
+  }
+
+  td {
+    border: 1px solid #999999 !important;
+    padding: 6px !important;
+    color: black !important;
+  }
+}

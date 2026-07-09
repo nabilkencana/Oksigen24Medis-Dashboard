@@ -7,17 +7,18 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { Button } from '../../components/ui/Button';
 import { Input, Select, Textarea } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
-import { Building, Shield, Users, Save, Check, User } from 'lucide-react';
+import { Shield, Users, Save, Check, User, Eye, EyeOff } from 'lucide-react';
 
-type TabType = 'company' | 'users' | 'roles' | 'profile';
+type TabType = 'users' | 'roles' | 'profile';
 
 export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as TabType) || 'company';
+  const initialTab = (searchParams.get('tab') as TabType) || 'users';
   
   const { theme, toggleTheme } = useData();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -27,15 +28,6 @@ export default function SettingsPage() {
     setActiveTab(tab);
     router.replace(`/settings?tab=${tab}`);
   };
-
-  // Form states
-  const [companyForm, setCompanyForm] = useState({
-    name: 'Oksigen Medis 24 Jam',
-    phone: '0858-6697-2209',
-    address: 'Dusun Sembon, Sembon, Kec. Karangrejo, Kabupaten Tulungagung, Jawa Timur 66253',
-    email: 'info@oksigenmedis24jam.com',
-    npwp: '01.234.567.8-901.000',
-  });
 
   const [profileForm, setProfileForm] = useState({
     name: 'Administrator Utama',
@@ -74,16 +66,10 @@ export default function SettingsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground">Pengaturan Sistem</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Konfigurasi profile perusahaan, data pengguna, hak akses, dan detail akun personal.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Konfigurasi data karyawan, hak akses, dan detail akun personal.</p>
         </div>
 
         <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold shrink-0">
-          <button
-            onClick={() => changeTab('company')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'company' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Perusahaan
-          </button>
           <button
             onClick={() => changeTab('users')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'users' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
@@ -107,61 +93,7 @@ export default function SettingsPage() {
 
       <div className="min-w-0">
         
-        {/* 1. COMPANY PROFILE */}
-        {activeTab === 'company' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Profil Perusahaan</CardTitle>
-              <CardDescription>Detail legalitas korporat untuk format kop struk POS dan print PDF invoice sewa.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={e => handleSave(e, 'Profil perusahaan berhasil diperbarui!')} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Nama Perusahaan *"
-                    id="settCompName"
-                    value={companyForm.name}
-                    onChange={e => setCompanyForm({ ...companyForm, name: e.target.value })}
-                  />
-                  <Input
-                    label="Nomor NPWP Perusahaan"
-                    id="settCompNpwp"
-                    value={companyForm.npwp}
-                    onChange={e => setCompanyForm({ ...companyForm, npwp: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Email Kantor *"
-                    id="settCompEmail"
-                    type="email"
-                    value={companyForm.email}
-                    onChange={e => setCompanyForm({ ...companyForm, email: e.target.value })}
-                  />
-                  <Input
-                    label="WhatsApp Hotline *"
-                    id="settCompPhone"
-                    value={companyForm.phone}
-                    onChange={e => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                  />
-                </div>
-                <Textarea
-                  label="Alamat Lengkap Kantor Pusat *"
-                  id="settCompAddr"
-                  value={companyForm.address}
-                  onChange={e => setCompanyForm({ ...companyForm, address: e.target.value })}
-                />
-                <div className="border-t border-border pt-4 flex justify-end">
-                  <Button type="submit" className="flex items-center gap-1.5">
-                    <Save className="w-4 h-4" /> Simpan Profil Perusahaan
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 2. USERS LIST */}
+        {/* 1. USERS LIST */}
         {activeTab === 'users' && (
           <Card>
             <CardHeader>
@@ -192,7 +124,7 @@ export default function SettingsPage() {
           </Card>
         )}
 
-        {/* 3. ROLES AND PERMISSIONS MATRIX */}
+        {/* 2. ROLES AND PERMISSIONS MATRIX */}
         {activeTab === 'roles' && (
           <Card>
             <CardHeader>
@@ -234,7 +166,7 @@ export default function SettingsPage() {
           </Card>
         )}
 
-        {/* 4. USER PROFILE */}
+        {/* 3. USER PROFILE */}
         {activeTab === 'profile' && (
           <Card>
             <CardHeader>
@@ -265,13 +197,23 @@ export default function SettingsPage() {
                     value={profileForm.phone}
                     onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                   />
-                  <Input
-                    label="Ubah Kata Sandi (Password)"
-                    id="settUserPass"
-                    type="password"
-                    value={profileForm.password}
-                    onChange={e => setProfileForm({ ...profileForm, password: e.target.value })}
-                  />
+                  <div className="relative flex items-end">
+                    <Input
+                      label="Ubah Kata Sandi (Password)"
+                      id="settUserPass"
+                      type={showPassword ? 'text' : 'password'}
+                      value={profileForm.password}
+                      onChange={e => setProfileForm({ ...profileForm, password: e.target.value })}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 bottom-2.5 p-1 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="border-t border-border pt-4 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-xs">

@@ -415,8 +415,8 @@ export default function InventoryPage() {
         <CardContent>
           
           {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 mb-4 items-center">
+            <div className="relative w-full sm:flex-1">
               <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
@@ -428,30 +428,31 @@ export default function InventoryPage() {
                 }
                 value={searchTerm}
                 onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="pl-9 pr-4 py-2 w-full text-sm bg-background border border-border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                className="pl-9 pr-4 h-10 w-full text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
             
             {/* Context-aware status select filter */}
-            <Select
-              id="invStatusFilter"
-              value={statusFilter}
-              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-              options={
-                activeTab === 'cylinders' ? [
-                  { value: 'All', label: 'Semua Status' },
-                  { value: 'Available', label: 'Tersedia' },
-                  { value: 'Rented', label: 'Sedang Disewa' },
-                  { value: 'At Vendor', label: 'Di Vendor Refill' },
-                  { value: 'Maintenance', label: 'Maintenance' }
-                ] : [
-                  { value: 'All', label: 'Semua Status' },
-                  { value: 'Active', label: 'Aktif' },
-                  { value: 'Inactive', label: 'Non-Aktif' }
-                ]
-              }
-              className="w-full sm:w-44"
-            />
+            <div className="w-full sm:w-48 shrink-0">
+              <Select
+                id="invStatusFilter"
+                value={statusFilter}
+                onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                options={
+                  activeTab === 'cylinders' ? [
+                    { value: 'All', label: 'Semua Status' },
+                    { value: 'Available', label: 'Tersedia' },
+                    { value: 'Rented', label: 'Sedang Disewa' },
+                    { value: 'At Vendor', label: 'Di Vendor Refill' },
+                    { value: 'Maintenance', label: 'Maintenance' }
+                  ] : [
+                    { value: 'All', label: 'Semua Status' },
+                    { value: 'Active', label: 'Aktif' },
+                    { value: 'Inactive', label: 'Non-Aktif' }
+                  ]
+                }
+              />
+            </div>
           </div>
 
           {/* 1. CYLINDERS TABLE */}

@@ -437,7 +437,7 @@ export default function FinancePage() {
                 placeholder="Cari deskripsi transaksi atau ID..."
                 value={searchTerm}
                 onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="pl-9 pr-4 py-2 w-full text-sm bg-background border border-border rounded-lg outline-none focus:ring-1 focus:ring-primary"
+                className="pl-9 pr-4 h-10 w-full text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
 

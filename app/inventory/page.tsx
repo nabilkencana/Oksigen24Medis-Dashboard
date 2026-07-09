@@ -72,6 +72,7 @@ export default function InventoryPage() {
   // Edit target states
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form states
   const [cylinderForm, setCylinderForm] = useState<{
@@ -486,8 +487,29 @@ export default function InventoryPage() {
                       <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCylinder(c)}>
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="outline" size="sm" className="px-2 text-rose-500 hover:bg-rose-500/10" onClick={() => { if (confirm('Hapus tabung ini?')) deleteCylinder(c.id); }}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 text-rose-500 hover:bg-rose-500/10"
+                        disabled={deletingId !== null}
+                        onClick={async () => {
+                          if (confirm('Hapus tabung ini?')) {
+                            setDeletingId(c.id);
+                            try {
+                              await deleteCylinder(c.id);
+                            } catch (err: any) {
+                              alert(err.message || 'Gagal menghapus tabung.');
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }
+                        }}
+                      >
+                        {deletingId === c.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -529,8 +551,29 @@ export default function InventoryPage() {
                       <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditProduct(p)}>
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="outline" size="sm" className="px-2 text-rose-500 hover:bg-rose-500/10" onClick={() => { if (confirm('Hapus produk ini?')) deleteProduct(p.id); }}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 text-rose-500 hover:bg-rose-500/10"
+                        disabled={deletingId !== null}
+                        onClick={async () => {
+                          if (confirm('Hapus produk ini?')) {
+                            setDeletingId(p.id);
+                            try {
+                              await deleteProduct(p.id);
+                            } catch (err: any) {
+                              alert(err.message || 'Gagal menghapus produk.');
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }
+                        }}
+                      >
+                        {deletingId === p.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -570,8 +613,29 @@ export default function InventoryPage() {
                       <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCustomer(c)}>
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="outline" size="sm" className="px-2 text-rose-500 hover:bg-rose-500/10" onClick={() => { if (confirm('Hapus pelanggan ini?')) deleteCustomer(c.id); }}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 text-rose-500 hover:bg-rose-500/10"
+                        disabled={deletingId !== null}
+                        onClick={async () => {
+                          if (confirm('Hapus pelanggan ini?')) {
+                            setDeletingId(c.id);
+                            try {
+                              await deleteCustomer(c.id);
+                            } catch (err: any) {
+                              alert(err.message || 'Gagal menghapus pelanggan.');
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }
+                        }}
+                      >
+                        {deletingId === c.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -611,8 +675,29 @@ export default function InventoryPage() {
                       <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditVendor(v)}>
                         <Edit2 className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="outline" size="sm" className="px-2 text-rose-500 hover:bg-rose-500/10" onClick={() => { if (confirm('Hapus vendor ini?')) deleteVendor(v.id); }}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 text-rose-500 hover:bg-rose-500/10"
+                        disabled={deletingId !== null}
+                        onClick={async () => {
+                          if (confirm('Hapus vendor ini?')) {
+                            setDeletingId(v.id);
+                            try {
+                              await deleteVendor(v.id);
+                            } catch (err: any) {
+                              alert(err.message || 'Gagal menghapus vendor.');
+                            } finally {
+                              setDeletingId(null);
+                            }
+                          }
+                        }}
+                      >
+                        {deletingId === v.id ? (
+                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>

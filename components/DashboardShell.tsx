@@ -108,17 +108,24 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     setOpenGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
 
+  // Derive role for menu visibility filtering
+  const userRole = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
+
+  const allMenuItems = [
+    { name: 'Dashboard',   href: '/',             icon: LayoutDashboard, roles: null },
+    { name: 'Transaksi',   href: '/transactions', icon: ArrowRightLeft,  roles: ['OWNER', 'ADMIN', 'WAREHOUSE', 'FINANCE'] },
+    { name: 'Inventaris',  href: '/inventory',    icon: Database,        roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+    { name: 'Keuangan',    href: '/finance',      icon: DollarSign,      roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+    { name: 'Laporan',     href: '/reports',      icon: TrendingUp,      roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+    { name: 'Pengaturan',  href: '/settings',     icon: Settings,        roles: ['OWNER', 'ADMIN'] },
+  ];
+
   const menuStructure: SidebarGroup[] = [
     {
       title: 'Menu Utama',
-      items: [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-        { name: 'Transaksi', href: '/transactions', icon: ArrowRightLeft },
-        { name: 'Inventaris', href: '/inventory', icon: Database },
-        { name: 'Keuangan', href: '/finance', icon: DollarSign },
-        { name: 'Laporan', href: '/reports', icon: TrendingUp },
-        { name: 'Pengaturan', href: '/settings', icon: Settings },
-      ]
+      items: allMenuItems.filter(item =>
+        !item.roles || item.roles.includes(userRole)
+      ),
     }
   ];
 
@@ -534,48 +541,26 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                       <div>
                         <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Pintasan Cepat</h4>
                         <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=rental'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Sewa Tabung Oksigen</span>
-                          </button>
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=return'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />
-                            <span>Kembalikan Tabung</span>
-                          </button>
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=refill'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5 text-blue-500" />
-                            <span>Isi Ulang Gas (Refill)</span>
-                          </button>
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=sales'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <ShoppingCart className="w-3.5 h-3.5 text-purple-500" />
-                            <span>POS Kasir Ritel</span>
-                          </button>
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=restock'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <Package className="w-3.5 h-3.5 text-teal-500" />
-                            <span>Beli Restock Baru</span>
-                          </button>
-                          <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/finance?tab=expenses'); }}
-                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
-                          >
-                            <FileText className="w-3.5 h-3.5 text-rose-500" />
-                            <span>Catat Kas Keluar</span>
-                          </button>
+                          {[
+                            { label: 'Sewa Tabung Oksigen',  href: '/transactions?tab=rental',   icon: <Clock className="w-3.5 h-3.5 text-emerald-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
+                            { label: 'Kembalikan Tabung',    href: '/transactions?tab=return',    icon: <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
+                            { label: 'Isi Ulang Gas (Refill)',href: '/transactions?tab=refill',   icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
+                            { label: 'POS Kasir Ritel',      href: '/transactions?tab=sales',    icon: <ShoppingCart className="w-3.5 h-3.5 text-purple-500" />, roles: ['OWNER','ADMIN','FINANCE'] },
+                            { label: 'Beli Restock Baru',    href: '/transactions?tab=restock',  icon: <Package className="w-3.5 h-3.5 text-teal-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
+                            { label: 'Catat Kas Keluar',     href: '/finance?tab=expenses',      icon: <FileText className="w-3.5 h-3.5 text-rose-500" />, roles: ['OWNER','ADMIN','FINANCE'] },
+                          ]
+                            .filter(s => !s.roles || s.roles.includes(userRole))
+                            .map(s => (
+                              <button
+                                key={s.href}
+                                onClick={() => { setIsSearchOpen(false); router.push(s.href); }}
+                                className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
+                              >
+                                {s.icon}
+                                <span>{s.label}</span>
+                              </button>
+                            ))
+                          }
                         </div>
                       </div>
                       <div className="text-center text-4xs text-muted-foreground font-semibold uppercase tracking-widest border-t border-border/40 pt-2">

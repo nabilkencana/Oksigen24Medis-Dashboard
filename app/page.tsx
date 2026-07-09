@@ -373,27 +373,34 @@ export default function Home() {
       </div>
 
       {/* Quick Action Panel */}
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/20 border border-border/80 rounded-xl">
-        <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-2">Pintasan Cepat:</span>
-        <Button size="sm" className="flex items-center gap-1.5" onClick={() => setActiveDrawer('rental')}>
-          <Plus className="w-3.5 h-3.5" /> Sewa Tabung Baru
-        </Button>
-        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => router.push('/transactions?tab=return')}>
-          <Clock className="w-3.5 h-3.5 text-orange-500" /> Kembalikan Tabung
-        </Button>
-        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('refill')}>
-          <RefreshCw className="w-3.5 h-3.5 text-blue-500" /> Kirim Refill Vendor
-        </Button>
-        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('sale')}>
-          <DollarSign className="w-3.5 h-3.5 text-purple-500" /> POS Kasir Ritel
-        </Button>
-        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => router.push('/transactions?tab=restock')}>
-          <PackageCheck className="w-3.5 h-3.5 text-emerald-500" /> Beli Restock Baru
-        </Button>
-        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('expense')}>
-          <FileText className="w-3.5 h-3.5 text-rose-500" /> Catat Kas Keluar
-        </Button>
-      </div>
+      {(() => {
+        const userRole = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
+        const quickActions = [
+          { label: 'Sewa Tabung Baru',   icon: <Plus className="w-3.5 h-3.5" />,                                           onClick: () => setActiveDrawer('rental'),                      roles: ['OWNER','ADMIN','WAREHOUSE'], primary: true },
+          { label: 'Kembalikan Tabung',  icon: <Clock className="w-3.5 h-3.5 text-orange-500" />,                          onClick: () => router.push('/transactions?tab=return'),         roles: ['OWNER','ADMIN','WAREHOUSE'] },
+          { label: 'Kirim Refill Vendor',icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />,                        onClick: () => setActiveDrawer('refill'),                       roles: ['OWNER','ADMIN','WAREHOUSE'] },
+          { label: 'POS Kasir Ritel',    icon: <DollarSign className="w-3.5 h-3.5 text-purple-500" />,                     onClick: () => setActiveDrawer('sale'),                         roles: ['OWNER','ADMIN','FINANCE'] },
+          { label: 'Beli Restock Baru',  icon: <PackageCheck className="w-3.5 h-3.5 text-emerald-500" />,                  onClick: () => router.push('/transactions?tab=restock'),        roles: ['OWNER','ADMIN','WAREHOUSE'] },
+          { label: 'Catat Kas Keluar',   icon: <FileText className="w-3.5 h-3.5 text-rose-500" />,                         onClick: () => setActiveDrawer('expense'),                      roles: ['OWNER','ADMIN','FINANCE'] },
+        ].filter(a => !a.roles || a.roles.includes(userRole));
+
+        return (
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/20 border border-border/80 rounded-xl">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-2">Pintasan Cepat:</span>
+            {quickActions.map(a => (
+              <Button
+                key={a.label}
+                size="sm"
+                variant={a.primary ? 'primary' : 'secondary'}
+                className={`flex items-center gap-1.5${!a.primary ? ' border border-border' : ''}`}
+                onClick={a.onClick}
+              >
+                {a.icon} {a.label}
+              </Button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Analytics Charts Grid */}
       <div className="grid grid-cols-1 gap-6">

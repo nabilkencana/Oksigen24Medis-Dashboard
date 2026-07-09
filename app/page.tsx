@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useData } from '../context/DataContext';
 import { formatRupiah, Cylinder } from '../context/mockData';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
   const {
     customers,
     vendors,
@@ -376,11 +378,17 @@ export default function Home() {
         <Button size="sm" className="flex items-center gap-1.5" onClick={() => setActiveDrawer('rental')}>
           <Plus className="w-3.5 h-3.5" /> Sewa Tabung Baru
         </Button>
+        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => router.push('/transactions?tab=return')}>
+          <Clock className="w-3.5 h-3.5 text-orange-500" /> Kembalikan Tabung
+        </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('refill')}>
           <RefreshCw className="w-3.5 h-3.5 text-blue-500" /> Kirim Refill Vendor
         </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('sale')}>
-          <DollarSign className="w-3.5 h-3.5 text-purple-500" /> Kasir POS Ritel
+          <DollarSign className="w-3.5 h-3.5 text-purple-500" /> POS Kasir Ritel
+        </Button>
+        <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => router.push('/transactions?tab=restock')}>
+          <PackageCheck className="w-3.5 h-3.5 text-emerald-500" /> Beli Restock Baru
         </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('expense')}>
           <FileText className="w-3.5 h-3.5 text-rose-500" /> Catat Kas Keluar
@@ -412,7 +420,7 @@ export default function Home() {
               <CardTitle>Transaksi Terbaru</CardTitle>
               <CardDescription>Daftar transaksi kasir terbaru</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs" onClick={() => window.location.href = '/rentals'}>
+            <Button variant="ghost" size="sm" className="text-xs" onClick={() => router.push('/transactions')}>
               Lihat Semua
             </Button>
           </CardHeader>
@@ -450,7 +458,7 @@ export default function Home() {
               <CardTitle>Aktivitas Logistik</CardTitle>
               <CardDescription>Riwayat pergerakan keluar masuk tabung</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-xs" onClick={() => window.location.href = '/stock-movements'}>
+            <Button variant="ghost" size="sm" className="text-xs" onClick={() => router.push('/stock-movements')}>
               Lihat Gudang
             </Button>
           </CardHeader>

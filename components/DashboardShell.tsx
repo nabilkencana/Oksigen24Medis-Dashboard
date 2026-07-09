@@ -531,6 +531,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             <span>Sewa Tabung Oksigen</span>
                           </button>
                           <button
+                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=return'); }}
+                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />
+                            <span>Kembalikan Tabung</span>
+                          </button>
+                          <button
                             onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=refill'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
@@ -541,8 +548,15 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=sales'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
-                            <DollarSign className="w-3.5 h-3.5 text-purple-500" />
-                            <span>Kasir POS Ritel</span>
+                            <ShoppingCart className="w-3.5 h-3.5 text-purple-500" />
+                            <span>POS Kasir Ritel</span>
+                          </button>
+                          <button
+                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=restock'); }}
+                            className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
+                          >
+                            <Package className="w-3.5 h-3.5 text-teal-500" />
+                            <span>Beli Restock Baru</span>
                           </button>
                           <button
                             onClick={() => { setIsSearchOpen(false); router.push('/finance?tab=expenses'); }}

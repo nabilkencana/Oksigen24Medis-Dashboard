@@ -315,14 +315,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: s.status === 'PAID' ? 'Paid' : 'Unpaid'
       }));
 
-      const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => ({
-        id: e.id,
-        category: mapExpenseCategoryToFrontend(e.category),
-        description: e.description || '',
-        amount: Number(e.amount) || 0,
-        date: new Date(e.date).toISOString().split('T')[0],
-        status: 'Approved'
-      }));
+      const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => {
+        let desc = e.description || '';
+        if (desc.startsWith('Refill cost for ') && (desc.includes(' cylinders from vendor') || desc.includes(' tabung dari vendor'))) {
+          const match = desc.match(/Refill cost for (\d+)/);
+          if (match) {
+            desc = `Biaya isi ulang untuk ${match[1]} tabung dari vendor`;
+          }
+        } else if (desc.startsWith('Purchase of inventory restock under invoice ')) {
+          desc = desc.replace('Purchase of inventory restock under invoice ', 'Pembelian restock inventaris dengan invoice ');
+        } else if (desc === 'Restock regulators and cannulas') {
+          desc = 'Restock regulator dan kanula';
+        }
+
+        return {
+          id: e.id,
+          category: mapExpenseCategoryToFrontend(e.category),
+          description: desc,
+          amount: Number(e.amount) || 0,
+          date: new Date(e.date).toISOString().split('T')[0],
+          status: 'Approved'
+        };
+      });
 
       const txFromIncomes = (incomesData.items || []).map((inc: any) => {
         let desc = inc.description || 'Pendapatan';
@@ -357,15 +371,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      const txFromExpenses = (expensesData.items || []).map((exp: any) => ({
-        id: `exp-${exp.id}`,
-        date: new Date(exp.date).toISOString().split('T')[0],
-        type: exp.category === 'VENDOR_REFILL' ? ('Refill' as const) : exp.category === 'PURCHASE' ? ('Purchase' as const) : ('Expense' as const),
-        description: exp.description || 'Pengeluaran',
-        amount: Number(exp.amount) || 0,
-        status: 'Completed' as const,
-        referenceId: exp.id
-      }));
+      const txFromExpenses = (expensesData.items || []).map((exp: any) => {
+        let desc = exp.description || 'Pengeluaran';
+        if (desc.startsWith('Refill cost for ') && (desc.includes(' cylinders from vendor') || desc.includes(' tabung dari vendor'))) {
+          const match = desc.match(/Refill cost for (\d+)/);
+          if (match) {
+            desc = `Biaya isi ulang untuk ${match[1]} tabung dari vendor`;
+          }
+        } else if (desc.startsWith('Purchase of inventory restock under invoice ')) {
+          desc = desc.replace('Purchase of inventory restock under invoice ', 'Pembelian restock inventaris dengan invoice ');
+        } else if (desc === 'Restock regulators and cannulas') {
+          desc = 'Restock regulator dan kanula';
+        }
+
+        return {
+          id: `exp-${exp.id}`,
+          date: new Date(exp.date).toISOString().split('T')[0],
+          type: exp.category === 'VENDOR_REFILL' ? ('Refill' as const) : exp.category === 'PURCHASE' ? ('Purchase' as const) : ('Expense' as const),
+          description: desc,
+          amount: Number(exp.amount) || 0,
+          status: 'Completed' as const,
+          referenceId: exp.id
+        };
+      });
 
       const allTransactions = [...txFromIncomes, ...txFromExpenses].sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oksigen24Medis ERP Dashboard",
+  title: "Oksigen Medis 24 Jam | ERP Dashboard",
   description: "ERP-style Oxygen Rental and Cylinder Inventory Management System Dashboard",
 };
 

@@ -59,9 +59,9 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   
   // Collapsed submenus state
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'Master Data': true,
-    'Transactions': true,
-    'Reports': false,
+    'Data Master': true,
+    'Transaksi Logistik': true,
+    'Laporan Rekapan': false,
   });
 
   const notificationRef = useRef<HTMLDivElement>(null);
@@ -99,46 +99,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   const menuStructure: SidebarGroup[] = [
     {
-      title: 'General',
+      title: 'Menu Utama',
       items: [
         { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-      ]
-    },
-    {
-      title: 'Master Data',
-      items: [
-        { name: 'Customer', href: '/customers', icon: Users },
-        { name: 'Vendor', href: '/vendors', icon: Building2 },
-        { name: 'Products', href: '/products', icon: Package },
-        { name: 'Oxygen Cylinders', href: '/cylinders', icon: Database },
-        { name: 'Oxygen Types', href: '/oxygen-types', icon: Wind },
-      ]
-    },
-    {
-      title: 'Transactions',
-      items: [
-        { name: 'Oxygen Rentals', href: '/rentals', icon: Clock },
-        { name: 'Vendor Refills', href: '/refills', icon: RefreshCw },
-        { name: 'Stock Movement', href: '/stock-movements', icon: ArrowRightLeft },
-        { name: 'Purchases', href: '/purchases', icon: ShoppingCart },
-        { name: 'Sales', href: '/sales', icon: DollarSign },
-        { name: 'Expenses', href: '/expenses', icon: FileText },
-      ]
-    },
-    {
-      title: 'Reports',
-      items: [
-        { name: 'Revenue Report', href: '/reports?tab=revenue', icon: TrendingUp },
-        { name: 'Rental Report', href: '/reports?tab=rental', icon: Clock },
-        { name: 'Expense Report', href: '/reports?tab=expense', icon: FileText },
-        { name: 'Inventory Report', href: '/reports?tab=inventory', icon: Database },
-      ]
-    },
-    {
-      title: 'System',
-      items: [
-        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-        { name: 'Settings', href: '/settings', icon: Settings },
+        { name: 'Transaksi', href: '/transactions', icon: ArrowRightLeft },
+        { name: 'Inventaris', href: '/inventory', icon: Database },
+        { name: 'Keuangan', href: '/finance', icon: DollarSign },
+        { name: 'Laporan', href: '/reports', icon: TrendingUp },
+        { name: 'Pengaturan', href: '/settings', icon: Settings },
       ]
     }
   ];
@@ -151,20 +119,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     for (const group of menuStructure) {
       for (const item of group.items) {
         if (pathname === item.href || pathname.startsWith(item.href + '/')) {
-          if (group.title === 'General' || group.title === 'System') {
-            return [item.name];
-          }
-          return [group.title, item.name];
+          return [item.name];
         }
       }
     }
-    
-    // Custom match for query parameters (e.g. reports)
-    if (pathname.includes('/reports')) {
-      return ['Reports', 'Report Details'];
-    }
-
-    return ['System', pathname.replace('/', '')];
+    return [pathname.replace('/', '')];
   };
 
   const breadcrumbs = getBreadcrumbs();
@@ -177,29 +136,29 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     const matchedCustomers = customers
       .filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
       .slice(0, 3)
-      .map(c => ({ type: 'Customer', name: c.name, sub: c.id, link: `/customers?search=${c.id}` }));
+      .map(c => ({ type: 'Pelanggan', name: c.name, sub: c.id, link: `/inventory?tab=customers&search=${c.id}` }));
 
     const matchedVendors = vendors
       .filter(v => v.companyName.toLowerCase().includes(query) || v.id.toLowerCase().includes(query))
       .slice(0, 3)
-      .map(v => ({ type: 'Vendor', name: v.companyName, sub: `Rep: ${v.name}`, link: `/vendors?search=${v.id}` }));
+      .map(v => ({ type: 'Mitra Vendor', name: v.companyName, sub: `Rep: ${v.name}`, link: `/inventory?tab=vendors&search=${v.id}` }));
 
     const matchedCylinders = cylinders
       .filter(c => c.serialNo.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
       .slice(0, 3)
-      .map(c => ({ type: 'Cylinder', name: c.serialNo, sub: `${c.size} - ${c.status}`, link: `/cylinders?search=${c.serialNo}` }));
+      .map(c => ({ type: 'Tabung', name: c.serialNo, sub: `${c.size} - ${c.status}`, link: `/inventory?tab=cylinders&search=${c.serialNo}` }));
 
     const matchedProducts = products
       .filter(p => p.name.toLowerCase().includes(query) || p.id.toLowerCase().includes(query))
       .slice(0, 3)
-      .map(p => ({ type: 'Product', name: p.name, sub: `${p.category} | ${formatRupiah(p.price)}`, link: `/products?search=${p.id}` }));
+      .map(p => ({ type: 'Produk', name: p.name, sub: `${p.category} | ${formatRupiah(p.price)}`, link: `/inventory?tab=products&search=${p.id}` }));
 
     // Pages match
     const matchedPages = [];
     for (const group of menuStructure) {
       for (const item of group.items) {
         if (item.name.toLowerCase().includes(query)) {
-          matchedPages.push({ type: 'Navigation', name: item.name, sub: `Buka halaman ${item.name}`, link: item.href });
+          matchedPages.push({ type: 'Menu Navigasi', name: item.name, sub: `Buka halaman ${item.name}`, link: item.href });
         }
       }
     }
@@ -229,60 +188,39 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             O₂
           </div>
           <div>
-            <h1 className="font-bold text-sm leading-tight text-foreground">Oksigen24Medis</h1>
+            <h1 className="font-bold text-sm leading-tight text-foreground">Oksigen Medis 24 Jam</h1>
             <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">ERP SYSTEM v1.0</p>
           </div>
         </div>
 
         {/* Sidebar Links */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-6">
-          {menuStructure.map((group, index) => {
-            const isCollapsible = group.title === 'Master Data' || group.title === 'Transactions' || group.title === 'Reports';
-            const isOpen = !isCollapsible || openGroups[group.title];
-
-            return (
-              <div key={index} className="space-y-1">
-                {isCollapsible ? (
-                  <button
-                    onClick={() => toggleGroup(group.title)}
-                    className="flex w-full items-center justify-between px-2 py-1 text-2xs font-bold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors cursor-pointer"
-                  >
-                    <span>{group.title}</span>
-                    {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                  </button>
-                ) : (
-                  <div className="px-2 py-1 text-2xs font-bold text-muted-foreground uppercase tracking-widest">
-                    {group.title}
-                  </div>
-                )}
-
-                {isOpen && (
-                  <div className="space-y-0.5">
-                    {group.items.map((item, itemIndex) => {
-                      // Check if route matches (account for query parameters)
-                      const cleanPath = pathname + (pathname.includes('/reports') && item.href.includes('tab=') ? '?tab=' + pathname.split('tab=')[1] : '');
-                      const isActive = pathname === item.href || (item.href !== '/' && cleanPath.startsWith(item.href));
-
-                      return (
-                        <Link
-                          key={itemIndex}
-                          href={item.href}
-                          className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all group ${
-                            isActive
-                              ? 'bg-primary text-primary-foreground shadow-sm'
-                              : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
-                          }`}
-                        >
-                          <item.icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? '' : 'group-hover:scale-110'}`} />
-                          <span className="truncate">{item.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+          {menuStructure.map((group, index) => (
+            <div key={index} className="space-y-1">
+              <div className="px-2 py-1 text-2xs font-bold text-muted-foreground uppercase tracking-widest">
+                {group.title}
               </div>
-            );
-          })}
+              <div className="space-y-0.5">
+                {group.items.map((item, itemIndex) => {
+                  const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                  return (
+                    <Link
+                      key={itemIndex}
+                      href={item.href}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all group ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                      }`}
+                    >
+                      <item.icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? '' : 'group-hover:scale-110'}`} />
+                      <span className="truncate">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Sidebar Footer */}
@@ -327,7 +265,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             {/* Breadcrumbs */}
             <div className="hidden sm:flex items-center gap-2 text-xs font-medium">
               <span className="text-muted-foreground/80 hover:text-foreground cursor-pointer" onClick={() => router.push('/')}>
-                Oksigen24Medis
+                Oksigen Medis 24 Jam
               </span>
               {breadcrumbs.map((bc, i) => (
                 <React.Fragment key={i}>
@@ -522,9 +460,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     </div>
                     <div className="space-y-0.5">
                       {group.items.map((item, itemIndex) => {
-                        const cleanPath = pathname + (pathname.includes('/reports') && item.href.includes('tab=') ? '?tab=' + pathname.split('tab=')[1] : '');
-                        const isActive = pathname === item.href || (item.href !== '/' && cleanPath.startsWith(item.href));
-
+                        const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
                         return (
                           <Link
                             key={itemIndex}
@@ -589,7 +525,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     type="text"
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search customers, vendors, cylinders, products, pages..."
+                    placeholder="Cari pelanggan, vendor, tabung, produk, halaman..."
                     className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground text-foreground border-none outline-none focus:ring-0 focus:outline-none"
                   />
                   <button
@@ -638,32 +574,32 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Pintasan Cepat</h4>
                         <div className="grid grid-cols-2 gap-2">
                           <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/rentals'); }}
+                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=rental'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
                             <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>Oxygen Rentals</span>
+                            <span>Sewa Tabung Oksigen</span>
                           </button>
                           <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/refills'); }}
+                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=refill'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
                             <RefreshCw className="w-3.5 h-3.5 text-blue-500" />
-                            <span>Vendor Refills</span>
+                            <span>Isi Ulang Gas (Refill)</span>
                           </button>
                           <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/sales'); }}
+                            onClick={() => { setIsSearchOpen(false); router.push('/transactions?tab=sales'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
                             <DollarSign className="w-3.5 h-3.5 text-purple-500" />
-                            <span>Sales Register</span>
+                            <span>Kasir POS Ritel</span>
                           </button>
                           <button
-                            onClick={() => { setIsSearchOpen(false); router.push('/expenses'); }}
+                            onClick={() => { setIsSearchOpen(false); router.push('/finance?tab=expenses'); }}
                             className="flex items-center gap-2 p-2 rounded-lg border border-border hover:bg-muted cursor-pointer text-left text-xs"
                           >
                             <FileText className="w-3.5 h-3.5 text-rose-500" />
-                            <span>Log Expense</span>
+                            <span>Catat Kas Keluar</span>
                           </button>
                         </div>
                       </div>

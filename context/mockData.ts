@@ -105,6 +105,7 @@ export interface Expense {
   amount: number;
   date: string;
   status: 'Pending' | 'Approved' | 'Rejected';
+  attachment?: string;
 }
 
 export interface Transaction {

@@ -194,26 +194,22 @@ export default function Home() {
             Berikut ringkasan operasional logistik dan sewa tabung oksigen hari ini.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-muted/30 px-3.5 py-1.5 rounded-lg border border-border">
-          <Activity className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold">Sistem Normal</span>
-        </div>
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* Today Revenue */}
         <Card>
-          <CardContent className="p-6 flex flex-col justify-between h-32">
+          <CardContent className="p-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
-              <span className="text-2xs font-bold text-muted-foreground uppercase tracking-wider">Pendapatan Hari Ini</span>
+              <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Pendapatan Hari Ini</span>
               <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-3.5 h-3.5" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold tracking-tight">{formatRupiah(todayRevenue)}</p>
+              <p className="text-xl font-bold tracking-tight">{formatRupiah(todayRevenue)}</p>
               <p className="text-4xs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowUpRight className="w-3 h-3" /> +12.4% <span className="text-muted-foreground font-medium font-sans">vs kemarin</span>
               </p>
@@ -221,35 +217,17 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Monthly Revenue */}
-        <Card>
-          <CardContent className="p-6 flex flex-col justify-between h-32">
-            <div className="flex justify-between items-start">
-              <span className="text-2xs font-bold text-muted-foreground uppercase tracking-wider">Pendapatan Bulan Ini</span>
-              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
-                <DollarSign className="w-4 h-4" />
-              </div>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight">{formatRupiah(monthlyRevenue)}</p>
-              <p className="text-4xs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5 flex items-center gap-0.5">
-                <ArrowUpRight className="w-3 h-3" /> +18.2% <span className="text-muted-foreground font-medium font-sans">vs bln lalu</span>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Active Rentals */}
         <Card>
-          <CardContent className="p-6 flex flex-col justify-between h-32">
+          <CardContent className="p-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
-              <span className="text-2xs font-bold text-muted-foreground uppercase tracking-wider">Rental Aktif</span>
+              <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Rental Aktif</span>
               <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-3.5 h-3.5" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold tracking-tight">{activeRentalsCount} <span className="text-xs text-muted-foreground font-medium">Tabung</span></p>
+              <p className="text-xl font-bold tracking-tight">{activeRentalsCount} <span className="text-2xs text-muted-foreground font-medium">Tabung</span></p>
               <p className="text-4xs text-rose-500 font-bold mt-1.5 flex items-center gap-0.5">
                 <ArrowDownRight className="w-3 h-3" /> -2.4% <span className="text-muted-foreground font-medium font-sans">vs minggu lalu</span>
               </p>
@@ -259,24 +237,56 @@ export default function Home() {
 
         {/* Available Cylinders */}
         <Card>
-          <CardContent className="p-6 flex flex-col justify-between h-32">
+          <CardContent className="p-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
-              <span className="text-2xs font-bold text-muted-foreground uppercase tracking-wider">Tabung Tersedia</span>
+              <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Tabung Tersedia</span>
               <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
-                <Database className="w-4 h-4" />
+                <Database className="w-3.5 h-3.5" />
               </div>
             </div>
             <div>
-              <p className="text-2xl font-bold tracking-tight">{availableCylindersCount} <span className="text-xs text-muted-foreground font-medium">Unit</span></p>
-              <p className="text-4xs text-muted-foreground font-bold mt-1.5 flex items-center gap-0.5">
+              <p className="text-xl font-bold tracking-tight">{availableCylindersCount} <span className="text-2xs text-muted-foreground font-medium">Unit</span></p>
+              <p className="text-4xs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5 flex items-center gap-0.5">
+                <CheckCircle2 className="w-3 h-3" /> Ready disewa
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cylinders at Vendor */}
+        <Card>
+          <CardContent className="p-5 flex flex-col justify-between h-32">
+            <div className="flex justify-between items-start">
+              <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Tabung di Vendor</span>
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xl font-bold tracking-tight">{atVendorCount} <span className="text-2xs text-muted-foreground font-medium">Unit</span></p>
+              <p className="text-4xs text-muted-foreground font-medium mt-1.5">
+                Sedang antre refill gas
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Low Stock */}
+        <Card>
+          <CardContent className="p-5 flex flex-col justify-between h-32">
+            <div className="flex justify-between items-start">
+              <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Stok Menipis</span>
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
+                <AlertTriangle className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div>
+              <p className="text-xl font-bold tracking-tight">{lowStockProductsCount} <span className="text-2xs text-muted-foreground font-medium">Produk</span></p>
+              <p className="text-4xs font-bold mt-1.5 flex items-center gap-0.5">
                 {lowStockProductsCount > 0 ? (
-                  <span className="text-amber-500 flex items-center gap-0.5">
-                    <AlertTriangle className="w-3 h-3" /> {lowStockProductsCount} Produk Low Stock
-                  </span>
+                  <span className="text-amber-500">Butuh restock segera</span>
                 ) : (
-                  <span className="text-emerald-500 flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Stok Gudang Aman
-                  </span>
+                  <span className="text-emerald-500">Stok barang aman</span>
                 )}
               </p>
             </div>
@@ -289,41 +299,30 @@ export default function Home() {
       <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/20 border border-border/80 rounded-xl">
         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-2">Pintasan Cepat:</span>
         <Button size="sm" className="flex items-center gap-1.5" onClick={() => setActiveDrawer('rental')}>
-          <Plus className="w-3.5 h-3.5" /> Sewa Tabung
+          <Plus className="w-3.5 h-3.5" /> Sewa Tabung Baru
         </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('refill')}>
-          <RefreshCw className="w-3.5 h-3.5 text-blue-500" /> Kirim Refill
+          <RefreshCw className="w-3.5 h-3.5 text-blue-500" /> Kirim Refill Vendor
         </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('sale')}>
-          <DollarSign className="w-3.5 h-3.5 text-emerald-500" /> Jual Aksesoris
+          <DollarSign className="w-3.5 h-3.5 text-purple-500" /> Kasir POS Ritel
         </Button>
         <Button size="sm" variant="secondary" className="flex items-center gap-1.5 border border-border" onClick={() => setActiveDrawer('expense')}>
-          <FileText className="w-3.5 h-3.5 text-rose-500" /> Catat Pengeluaran
+          <FileText className="w-3.5 h-3.5 text-rose-500" /> Catat Kas Keluar
         </Button>
       </div>
 
       {/* Analytics Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         
-        {/* Revenue Area Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Tren Pendapatan</CardTitle>
-            <CardDescription>Grafik pendapatan operasional 6 bulan terakhir</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AreaChart data={monthlyRevenueData} height={200} color="#3b82f6" />
-          </CardContent>
-        </Card>
-
-        {/* Cylinder Donut Chart */}
+        {/* Revenue Area Chart - Full Width */}
         <Card>
           <CardHeader>
-            <CardTitle>Alokasi Tabung Oksigen</CardTitle>
-            <CardDescription>Pembagian status tabung oksigen saat ini</CardDescription>
+            <CardTitle>Tren Pendapatan Operasional</CardTitle>
+            <CardDescription>Grafik pertumbuhan kas masuk (Sewa & POS) 6 bulan terakhir</CardDescription>
           </CardHeader>
-          <CardContent className="flex justify-center items-center h-[200px]">
-            <DonutChart data={cylinderStatusData} />
+          <CardContent>
+            <AreaChart data={monthlyRevenueData} height={220} color="#10b981" />
           </CardContent>
         </Card>
 

@@ -26,7 +26,7 @@ export interface Cylinder {
   serialNo: string;
   oxygenType: string;
   size: '1m3' | '2m3' | '6m3';
-  status: 'Available' | 'Rented' | 'At Vendor' | 'Maintenance';
+  status: 'Available' | 'Rented' | 'At Vendor' | 'Maintenance' | 'Empty';
   lastInspection: string;
 }
 

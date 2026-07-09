@@ -312,8 +312,8 @@ export default function TransactionsPage() {
     }
   };
 
-  // Filter cylinders for refills (need available empty cylinders or maintenance ones)
-  const emptyCylinders = cylinders.filter(c => c.status === 'Available' || c.status === 'Maintenance');
+  // Filter cylinders for refills (need empty cylinders or maintenance ones)
+  const emptyCylinders = cylinders.filter(c => c.status === 'Empty' || c.status === 'Maintenance');
   const rentedCylindersForReturn = rentals.filter(r => r.status === 'Active' || r.status === 'Overdue');
 
   return (
@@ -979,7 +979,19 @@ export default function TransactionsPage() {
             onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
             options={[
               { value: '', label: '-- Pilih Tabung Ready --' },
-              ...cylinders.filter(c => c.status === 'Available').map(c => ({ value: c.id, label: `${c.serialNo} (${c.size}) - ${c.oxygenType}` }))
+              ...cylinders.map(c => {
+                let statusLabel = 'Tersedia';
+                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
+                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
+                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
+                if (c.status === 'Empty') statusLabel = 'Kosong';
+                
+                return {
+                  value: c.id,
+                  label: `${c.serialNo} (${c.size}) - ${c.oxygenType} - [${statusLabel}]`,
+                  disabled: c.status !== 'Available'
+                };
+              })
             ]}
           />
           <div className="grid grid-cols-2 gap-4">
@@ -1092,7 +1104,20 @@ export default function TransactionsPage() {
             onChange={e => setRefillForm({ ...refillForm, cylinderId: e.target.value })}
             options={[
               { value: '', label: '-- Pilih Tabung --' },
-              ...emptyCylinders.map(c => ({ value: c.id, label: `${c.serialNo} (${c.size} - status: ${c.status})` }))
+              ...cylinders.map(c => {
+                let statusLabel = 'Tersedia';
+                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
+                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
+                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
+                if (c.status === 'Empty') statusLabel = 'Kosong';
+                
+                const canRefill = c.status === 'Empty' || c.status === 'Maintenance';
+                return {
+                  value: c.id,
+                  label: `${c.serialNo} (${c.size}) - ${c.oxygenType} - [${statusLabel}]`,
+                  disabled: !canRefill
+                };
+              })
             ]}
           />
           <Select

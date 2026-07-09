@@ -452,7 +452,19 @@ export default function Home() {
             onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
             options={[
               { value: '', label: '-- Pilih Tabung --' },
-              ...cylinders.filter(c => c.status === 'Available').map(c => ({ value: c.id, label: `${c.serialNo} (${c.size} - ${c.oxygenType})` }))
+              ...cylinders.map(c => {
+                let statusLabel = 'Tersedia';
+                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
+                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
+                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
+                if (c.status === 'Empty') statusLabel = 'Kosong';
+                
+                return {
+                  value: c.id,
+                  label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                  disabled: c.status !== 'Available'
+                };
+              })
             ]}
           />
           <div className="grid grid-cols-2 gap-4">
@@ -509,13 +521,26 @@ export default function Home() {
       <Drawer isOpen={activeDrawer === 'refill'} onClose={() => setActiveDrawer(null)} title="Kirim Tabung Kosong ke Vendor">
         <form onSubmit={handleRefillSubmit} className="space-y-4">
           <Select
-            label="Pilih Tabung Oksigen (Habis/Maintenance) *"
+            label="Pilih Tabung Oksigen (Kosong/Maintenance) *"
             id="refillCyl"
             value={refillForm.cylinderId}
             onChange={e => setRefillForm({ ...refillForm, cylinderId: e.target.value })}
             options={[
               { value: '', label: '-- Pilih Tabung --' },
-              ...cylinders.filter(c => c.status !== 'Rented' && c.status !== 'At Vendor').map(c => ({ value: c.id, label: `${c.serialNo} (${c.status})` }))
+              ...cylinders.map(c => {
+                let statusLabel = 'Tersedia';
+                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
+                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
+                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
+                if (c.status === 'Empty') statusLabel = 'Kosong';
+                
+                const canRefill = c.status === 'Empty' || c.status === 'Maintenance';
+                return {
+                  value: c.id,
+                  label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                  disabled: !canRefill
+                };
+              })
             ]}
           />
           <Select

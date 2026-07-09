@@ -67,6 +67,7 @@ const mapCylinderStatusToFrontend = (status: string) => {
     case 'RENTED': return 'Rented';
     case 'AT_VENDOR': return 'At Vendor';
     case 'MAINTENANCE': return 'Maintenance';
+    case 'EMPTY': return 'Empty';
     default: return 'Available';
   }
 };

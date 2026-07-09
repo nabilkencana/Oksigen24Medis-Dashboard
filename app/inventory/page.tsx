@@ -78,7 +78,7 @@ export default function InventoryPage() {
     size: '1m3' | '2m3' | '6m3';
     oxygenType: string;
     lastInspection: string;
-    status: 'Available' | 'Rented' | 'At Vendor' | 'Maintenance';
+    status: 'Available' | 'Rented' | 'At Vendor' | 'Maintenance' | 'Empty';
   }>({
     serialNo: '',
     size: '1m3',
@@ -666,7 +666,8 @@ export default function InventoryPage() {
                 { value: 'Available', label: 'Tersedia di Gudang (Available)' },
                 { value: 'Rented', label: 'Sedang Disewa (Rented)' },
                 { value: 'At Vendor', label: 'Isi Ulang di Vendor (At Vendor)' },
-                { value: 'Maintenance', label: 'Sedang Servis (Maintenance)' }
+                { value: 'Maintenance', label: 'Sedang Servis (Maintenance)' },
+                { value: 'Empty', label: 'Kosong (Empty)' }
               ]}
             />
           )}

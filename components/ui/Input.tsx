@@ -60,7 +60,7 @@ export function Input({ label, error, className = '', id, isRupiah, onChange, va
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ value: string; label: string; disabled?: boolean }>;
   error?: string;
 }
 
@@ -75,7 +75,7 @@ export function Select({ label, options, error, className = '', id, ...props }: 
           {...props}
         >
           {options.map(opt => (
-            <option key={opt.value} value={opt.value}>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
               {opt.label}
             </option>
           ))}

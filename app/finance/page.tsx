@@ -360,6 +360,23 @@ export default function FinancePage() {
                     );
                   })}
                 </div>
+
+                {/* Sub-breakdown for "Other" category details */}
+                {expenses.some(e => e.category === 'Other') && (
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <p className="text-2xs font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Rincian Lain-lain (Detail)</p>
+                    <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
+                      {expenses
+                        .filter(e => e.category === 'Other')
+                        .map(e => (
+                          <div key={e.id} className="flex justify-between items-start text-3xs border-b border-border/40 pb-1.5 last:border-0 last:pb-0">
+                            <span className="text-muted-foreground font-medium max-w-[70%] leading-relaxed">{e.description}</span>
+                            <span className="text-foreground font-bold shrink-0">{formatRupiah(e.amount)}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

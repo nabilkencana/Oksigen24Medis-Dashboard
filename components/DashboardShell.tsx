@@ -51,6 +51,17 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const router = useRouter();
   const { theme, toggleTheme, customers, vendors, cylinders, products, expenses, user, logout } = useData();
 
+  const getRoleLabel = (usr: any) => {
+    if (!usr) return 'Admin Role';
+    const roleVal = usr.role?.name || usr.role || 'ADMIN';
+    const r = String(roleVal).toUpperCase();
+    if (r === 'OWNER') return 'Owner Role';
+    if (r === 'ADMIN') return 'Admin Role';
+    if (r === 'FINANCE') return 'Finance Role';
+    if (r === 'WAREHOUSE') return 'Warehouse Role';
+    return `${roleVal} Role`;
+  };
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -222,11 +233,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase shadow-inner">
-                AD
+                {user?.fullName ? user.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
               </div>
               <div className="truncate w-28">
-                <p className="text-xs font-semibold leading-tight truncate">Administrator</p>
-                <p className="text-4xs text-muted-foreground leading-none font-bold uppercase">Owner Role</p>
+                <p className="text-xs font-semibold leading-tight truncate">{user?.fullName || 'Administrator'}</p>
+                <p className="text-4xs text-muted-foreground leading-none font-bold uppercase">{getRoleLabel(user)}</p>
               </div>
             </div>
             <button
@@ -436,11 +447,11 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               <div className="p-4 border-t border-border/60 bg-muted/20">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">
-                    AD
+                    {user?.fullName ? user.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
                   </div>
                   <div className="truncate w-36">
-                    <p className="text-xs font-semibold leading-none truncate">Administrator</p>
-                    <p className="text-4xs text-muted-foreground mt-0.5">Owner Role</p>
+                    <p className="text-xs font-semibold leading-none truncate">{user?.fullName || 'Administrator'}</p>
+                    <p className="text-4xs text-muted-foreground mt-0.5 uppercase font-bold">{getRoleLabel(user)}</p>
                   </div>
                 </div>
               </div>

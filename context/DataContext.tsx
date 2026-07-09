@@ -166,25 +166,62 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const refreshAllData = async () => {
     if (!token || isRefreshingRef.current) return;
     isRefreshingRef.current = true;
-    try {
-      const customersData = await fetchApi('/inventory/customers?limit=100');
-      const vendorsData = await fetchApi('/inventory/vendors?limit=100');
-      const cylindersData = await fetchApi('/inventory/cylinders?limit=100');
-      const productsData = await fetchApi('/inventory/products?limit=100');
-      const rentalsData = await fetchApi('/transactions/rentals?limit=100');
-      const salesData = await fetchApi('/transactions/sales?limit=100');
-      const purchasesData = await fetchApi('/transactions/purchases?limit=100');
-      const movementsData = await fetchApi('/transactions/stock-movements?limit=100');
-      const expensesData = await fetchApi('/finance/expenses?limit=100');
-      const incomesData = await fetchApi('/finance/incomes?limit=100');
-      const categoriesData = await fetchApi('/inventory/categories?limit=100');
-      const oxygenTypesData = await fetchApi('/inventory/oxygen-types?limit=100');
 
-      setCategories(categoriesData.items || []);
-      setOxygenTypes(oxygenTypesData.items || []);
+    // Helper: resolve to null instead of throwing on 403 Forbidden
+    const safe = async (fn: () => Promise<any>) => {
+      try { return await fn(); } catch { return null; }
+    };
+
+    // Derive the user role from the cached user object
+    const currentUser = (() => {
+      try {
+        const u = localStorage.getItem('oksigen24_user');
+        return u ? JSON.parse(u) : null;
+      } catch { return null; }
+    })();
+    const roleName = String(currentUser?.role?.name || currentUser?.role || 'OWNER').toUpperCase();
+    const isOwnerOrAdmin = roleName === 'OWNER' || roleName === 'ADMIN';
+    const isFinance   = roleName === 'FINANCE';
+    const isWarehouse = roleName === 'WAREHOUSE';
+
+    // FINANCE can't access: vendors, cylinders, rentals, purchases, stock-movements
+    // WAREHOUSE can't access: finance/expenses, finance/incomes, sales (POST only – GET allowed for all on sales)
+    // Note: GET /transactions/sales has no @Roles guard so all authenticated users can read it.
+
+    try {
+      const [
+        customersData,
+        vendorsData,
+        cylindersData,
+        productsData,
+        rentalsData,
+        salesData,
+        purchasesData,
+        movementsData,
+        expensesData,
+        incomesData,
+        categoriesData,
+        oxygenTypesData,
+      ] = await Promise.all([
+        fetchApi('/inventory/customers?limit=100'),                                    // all roles can read
+        isFinance ? safe(() => fetchApi('/inventory/vendors?limit=100')) : fetchApi('/inventory/vendors?limit=100'),
+        isFinance ? safe(() => fetchApi('/inventory/cylinders?limit=100')) : fetchApi('/inventory/cylinders?limit=100'),
+        fetchApi('/inventory/products?limit=100'),                                     // all roles can read
+        isFinance ? safe(() => fetchApi('/transactions/rentals?limit=100')) : fetchApi('/transactions/rentals?limit=100'),
+        fetchApi('/transactions/sales?limit=100'),                                     // all roles can read (no GET guard)
+        isFinance ? safe(() => fetchApi('/transactions/purchases?limit=100')) : fetchApi('/transactions/purchases?limit=100'),
+        isFinance ? safe(() => fetchApi('/transactions/stock-movements?limit=100')) : fetchApi('/transactions/stock-movements?limit=100'),
+        isWarehouse ? safe(() => fetchApi('/finance/expenses?limit=100')) : fetchApi('/finance/expenses?limit=100'),
+        isWarehouse ? safe(() => fetchApi('/finance/incomes?limit=100')) : fetchApi('/finance/incomes?limit=100'),
+        fetchApi('/inventory/categories?limit=100'),                                   // all roles can read
+        fetchApi('/inventory/oxygen-types?limit=100'),                                 // all roles can read
+      ]);
+
+      setCategories((categoriesData?.items) || []);
+      setOxygenTypes((oxygenTypesData?.items) || []);
 
       // Mapping Logic
-      const mappedCustomers: Customer[] = (customersData.items || []).map((c: any) => ({
+      const mappedCustomers: Customer[] = ((customersData?.items) || []).map((c: any) => ({
         id: c.id,
         name: c.name,
         phone: c.phone || '',
@@ -195,7 +232,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         joinedDate: new Date(c.createdAt).toISOString().split('T')[0]
       }));
 
-      const mappedVendors: Vendor[] = (vendorsData.items || []).map((v: any) => ({
+      const mappedVendors: Vendor[] = ((vendorsData?.items) || []).map((v: any) => ({
         id: v.id,
         name: v.name,
         companyName: v.name,
@@ -205,7 +242,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: v.isActive ? 'Active' : 'Inactive'
       }));
 
-      const mappedCylinders: Cylinder[] = (cylindersData.items || []).map((c: any) => ({
+      const mappedCylinders: Cylinder[] = ((cylindersData?.items) || []).map((c: any) => ({
         id: c.id,
         serialNo: c.serialNumber,
         oxygenType: c.oxygenType?.name || 'Medical Oxygen',
@@ -214,7 +251,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         lastInspection: c.updatedAt ? new Date(c.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
       }));
 
-      const mappedProducts: Product[] = (productsData.items || []).map((p: any) => ({
+      const mappedProducts: Product[] = ((productsData?.items) || []).map((p: any) => ({
         id: p.id,
         name: p.name,
         category: mapProductCategoryToFrontend(p.category?.name),
@@ -224,7 +261,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         description: p.description || ''
       }));
 
-      const mappedRentals: Rental[] = (rentalsData.items || []).map((r: any) => {
+      const mappedRentals: Rental[] = ((rentalsData?.items) || []).map((r: any) => {
         const cylSize = r.items?.[0]?.cylinder?.size || '1m3';
         const defaultDeposit = cylSize === '1m3' ? 200000 : cylSize === '2m3' ? 300000 : 500000;
         let depositVal = defaultDeposit;
@@ -270,7 +307,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      const activeRefills: Refill[] = (cylindersData.items || [])
+      const activeRefills: Refill[] = ((cylindersData?.items) || [])
         .filter((c: any) => c.status === 'AT_VENDOR')
         .map((c: any) => ({
           id: c.id,
@@ -283,7 +320,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           status: 'Sent' as const
         }));
 
-      const mappedMovements: StockMovement[] = (movementsData.items || []).map((m: any) => ({
+      const mappedMovements: StockMovement[] = ((movementsData?.items) || []).map((m: any) => ({
         id: m.id,
         itemId: m.cylinder?.serialNumber || m.product?.name || m.productId || m.cylinderId || '',
         itemName: m.cylinder ? `Tabung ${m.cylinder.serialNumber}` : (m.product?.name || 'Item'),
@@ -294,7 +331,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         reason: m.referenceType
       }));
 
-      const mappedPurchases: Purchase[] = (purchasesData.items || []).map((p: any) => ({
+      const mappedPurchases: Purchase[] = ((purchasesData?.items) || []).map((p: any) => ({
         id: p.id,
         vendorId: p.vendorId,
         vendorName: p.vendor?.name || 'Unknown',
@@ -309,7 +346,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: p.status === 'PAID' ? 'Completed' : 'Pending'
       }));
 
-        const mappedSales: Sale[] = (salesData.items || []).map((s: any) => {
+        const mappedSales: Sale[] = ((salesData?.items) || []).map((s: any) => {
           let rawPm = s.paymentMethod || 'CASH';
           let serviceTypeVal: 'Kios' | 'Antar' = 'Kios';
           if (rawPm.includes('[SERVICE:')) {
@@ -340,7 +377,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           };
         });
 
-      const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => {
+      const mappedExpenses: Expense[] = ((expensesData?.items) || []).map((e: any) => {
         let desc = e.description || '';
         if (desc.startsWith('Refill cost for ') && (desc.includes(' cylinders from vendor') || desc.includes(' tabung dari vendor'))) {
           const match = desc.match(/Refill cost for (\d+)/);
@@ -363,7 +400,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      const txFromIncomes = (incomesData.items || []).map((inc: any) => {
+      const txFromIncomes = ((incomesData?.items) || []).map((inc: any) => {
         let desc = inc.description || 'Pendapatan';
         if (desc.startsWith('Payment for rental invoice ')) {
           desc = desc.replace('Payment for rental invoice ', 'Pembayaran invoice sewa ');
@@ -396,7 +433,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
       });
 
-      const txFromExpenses = (expensesData.items || []).map((exp: any) => {
+      const txFromExpenses = ((expensesData?.items) || []).map((exp: any) => {
         let desc = exp.description || 'Pengeluaran';
         if (desc.startsWith('Refill cost for ') && (desc.includes(' cylinders from vendor') || desc.includes(' tabung dari vendor'))) {
           const match = desc.match(/Refill cost for (\d+)/);

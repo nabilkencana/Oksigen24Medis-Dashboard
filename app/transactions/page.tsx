@@ -320,10 +320,10 @@ export default function TransactionsPage() {
     <div className="space-y-6">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          aside, header, .no-print, [role="button"], button, .bg-black {
+          aside, header, .no-print, [role="button"], button, select, .bg-black {
             display: none !important;
           }
-          html, body, #__next, .flex.h-screen, .flex-1.flex.flex-col, main, .space-y-6 {
+          html, body, #__next, .flex.h-screen, .flex-1.flex.flex-col, main {
             height: auto !important;
             min-height: auto !important;
             overflow: visible !important;
@@ -773,41 +773,7 @@ export default function TransactionsPage() {
                   )}
                 </Button>
 
-                {/* Print completed invoice */}
-                {completedSaleInvoice && (
-                  <div className="border border-emerald-500/20 bg-emerald-500/5 p-4 rounded-xl space-y-3 mt-4">
-                    <p className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Transaksi Kasir Berhasil!
-                    </p>
-                    <div className="text-4xs font-mono text-muted-foreground leading-relaxed p-2 bg-card border border-border/50 rounded-lg">
-                      <p className="text-center font-bold text-foreground">OKSIGEN MEDIS 24 JAM</p>
-                      <p className="text-center mb-2">Dusun Sembon, Sembon, Kec. Karangrejo, Tulungagung</p>
-                      <p>Inv: {completedSaleInvoice.id}</p>
-                      <p>Tgl: {completedSaleInvoice.date}</p>
-                      <p>Bayar: {completedSaleInvoice.paymentMethod}</p>
-                      <hr className="my-1 border-dashed border-border" />
-                      {completedSaleInvoice.items.map((it: any) => (
-                        <div key={it.productId} className="flex justify-between">
-                          <span>{it.name} x {it.qty}</span>
-                          <span>{formatRupiah(it.price * it.qty)}</span>
-                        </div>
-                      ))}
-                      <hr className="my-1 border-dashed border-border" />
-                      <div className="flex justify-between font-bold text-foreground">
-                        <span>TOTAL</span>
-                        <span>{formatRupiah(completedSaleInvoice.amount)}</span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-3xs py-1"
-                      onClick={() => setCompletedSaleInvoice(null)}
-                    >
-                      Tutup Struk
-                    </Button>
-                  </div>
-                )}
+
 
               </CardContent>
             </Card>
@@ -1317,6 +1283,97 @@ export default function TransactionsPage() {
             >
               Print Cetak Fisik
             </Button>
+          </div>
+        </Drawer>
+      )}
+
+      {/* 5b. COMPLETED POS INVOICE DRAWER */}
+      {completedSaleInvoice && (
+        <Drawer isOpen={!!completedSaleInvoice} onClose={() => setCompletedSaleInvoice(null)} title="Nota Penjualan POS">
+          <div className="printable-invoice-card p-6 bg-white text-zinc-900 font-sans border rounded-xl shadow-xs text-xs space-y-4 max-w-sm mx-auto">
+            {/* Completion Success Header */}
+            <div className="flex flex-col items-center justify-center text-center space-y-2 pb-4 border-b border-zinc-100 no-print">
+              <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 animate-bounce">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h4 className="font-bold text-emerald-600 text-sm">Pembayaran Berhasil!</h4>
+              <p className="text-[10px] text-zinc-400">Transaksi ritel kasir POS telah tersimpan di database.</p>
+            </div>
+
+            {/* Receipt Details (matches thermal receipt style) */}
+            <div className="space-y-3 font-mono text-xs">
+              <div className="text-center">
+                <h3 className="font-bold text-sm tracking-tight">Oksigen Medis 24 Jam</h3>
+                <p className="text-[9px] text-zinc-500 mt-0.5">Dusun Sembon, Sembon, Kec. Karangrejo, Tulungagung • Telp: 0858-6697-2209</p>
+              </div>
+
+              <hr className="border-dashed border-zinc-300" />
+              
+              <div className="space-y-1 text-[10px] text-zinc-600">
+                <div className="flex justify-between">
+                  <span>No. Nota:</span>
+                  <span className="font-bold text-zinc-900">{completedSaleInvoice.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tanggal:</span>
+                  <span>{completedSaleInvoice.date}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Pelanggan:</span>
+                  <span className="font-bold text-zinc-900">{customers.find(c => c.id === completedSaleInvoice.customerId)?.name || 'Pelanggan Ritel'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Pembayaran:</span>
+                  <span className="font-bold text-zinc-900 uppercase">{completedSaleInvoice.paymentMethod}</span>
+                </div>
+              </div>
+
+              <hr className="border-dashed border-zinc-300" />
+
+              {/* Items List */}
+              <div className="space-y-2 text-[10px]">
+                {completedSaleInvoice.items.map((it: any) => (
+                  <div key={it.productId} className="space-y-0.5">
+                    <div className="flex justify-between text-zinc-900">
+                      <span className="font-semibold">{it.name}</span>
+                      <span>{formatRupiah(it.price * it.qty)}</span>
+                    </div>
+                    <div className="flex justify-between text-zinc-500 text-[9px]">
+                      <span>{it.qty} x {formatRupiah(it.price)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <hr className="border-dashed border-zinc-300" />
+
+              {/* Grand Total */}
+              <div className="flex justify-between items-center text-xs font-bold text-zinc-900 pt-1">
+                <span>TOTAL</span>
+                <span className="text-sm font-extrabold text-emerald-600">{formatRupiah(completedSaleInvoice.amount)}</span>
+              </div>
+            </div>
+
+            <div className="text-[9px] text-zinc-400 text-center pt-2">
+              Terima kasih atas kunjungan Anda.
+            </div>
+
+            {/* Print trigger button */}
+            <div className="flex gap-3 pt-4 border-t border-zinc-100 no-print">
+              <Button
+                variant="outline"
+                className="flex-1 text-xs"
+                onClick={() => setCompletedSaleInvoice(null)}
+              >
+                Tutup
+              </Button>
+              <Button
+                className="flex-1 text-white bg-blue-600 text-xs"
+                onClick={() => window.print()}
+              >
+                Cetak Nota / Struk
+              </Button>
+            </div>
           </div>
         </Drawer>
       )}

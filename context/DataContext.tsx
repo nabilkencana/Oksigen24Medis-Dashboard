@@ -53,7 +53,7 @@ interface DataContextType {
   receiveRefill: (refillId: string, returnDate: string) => Promise<void>;
   createStockMovement: (mvt: Omit<StockMovement, 'id' | 'date'>) => Promise<void>;
   createPurchase: (pur: { vendorId: string; items: Array<{ itemId: string; name: string; qty: number; cost: number }>; date: string }) => Promise<void>;
-  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => Promise<void>;
+  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => Promise<any>;
   createExpense: (exp: Omit<Expense, 'id' | 'status'>) => Promise<void>;
   approveExpense: (expenseId: string) => Promise<void>;
 }
@@ -630,7 +630,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const createSale = async (sale: any) => {
-    await fetchApi('/transactions/sales', {
+    const res = await fetchApi('/transactions/sales', {
       method: 'POST',
       body: JSON.stringify({
         customerId: sale.customerId || undefined,
@@ -642,7 +642,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
         paymentMethod: sale.paymentMethod.toUpperCase() === 'E-WALLET' ? 'E_WALLET' : sale.paymentMethod.toUpperCase()
       })
     });
+
+    const mappedItems = (res.items || []).map((i: any) => {
+      const prod = data?.products?.find(p => p.id === i.productId);
+      return {
+        productId: i.productId,
+        name: prod ? prod.name : 'Produk Ritel',
+        qty: i.quantity,
+        price: Number(i.unitPrice) || 0
+      };
+    });
+
     await refreshAllData();
+
+    return {
+      id: res.id,
+      customerId: res.customerId || '',
+      paymentMethod: res.paymentMethod === 'E_WALLET' ? 'E-Wallet' : res.paymentMethod,
+      amount: Number(res.totalAmount) || 0,
+      date: new Date(res.createdAt).toISOString().split('T')[0],
+      items: mappedItems
+    };
   };
 
   const createExpense = async (exp: any) => {

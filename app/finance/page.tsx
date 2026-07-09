@@ -248,54 +248,66 @@ export default function FinancePage() {
           
           {/* Dashboard cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-5 flex flex-col justify-between h-30">
-                <div className="flex justify-between items-start">
-                  <span className="text-3xs font-bold text-muted-foreground uppercase">Total Pendapatan</span>
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+            {/* Total Pendapatan */}
+            <Card className="overflow-hidden border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
+              <CardContent className="p-6 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xs font-bold text-emerald-800 dark:text-emerald-300 tracking-wider uppercase">Total Pendapatan</span>
+                  <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">{formatRupiah(financeSummary.totalIncome)}</p>
-                  <p className="text-4xs text-emerald-600 dark:text-emerald-400 mt-1">Uang masuk persewaan & ritel</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-5 flex flex-col justify-between h-30">
-                <div className="flex justify-between items-start">
-                  <span className="text-3xs font-bold text-muted-foreground uppercase">Total Pengeluaran</span>
-                  <TrendingDown className="w-4 h-4 text-rose-500" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">{formatRupiah(financeSummary.totalExpense)}</p>
-                  <p className="text-4xs text-rose-500 mt-1">{formatRupiah(financeSummary.pendingExpenses)} pending approval</p>
+                <div className="mt-2">
+                  <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.totalIncome)}</p>
+                  <p className="text-4xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Uang masuk persewaan & ritel</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-5 flex flex-col justify-between h-30">
-                <div className="flex justify-between items-start">
-                  <span className="text-3xs font-bold text-muted-foreground uppercase">Laba Bersih</span>
-                  <DollarSign className="w-4 h-4 text-primary" />
+            {/* Total Pengeluaran */}
+            <Card className="overflow-hidden border border-rose-500/10 bg-gradient-to-br from-rose-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
+              <CardContent className="p-6 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xs font-bold text-rose-800 dark:text-rose-300 tracking-wider uppercase">Total Pengeluaran</span>
+                  <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400">
+                    <TrendingDown className="w-4 h-4" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">{formatRupiah(financeSummary.netProfit)}</p>
-                  <p className="text-4xs text-muted-foreground mt-1">Selisih kas masuk - kas keluar</p>
+                <div className="mt-2">
+                  <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.totalExpense)}</p>
+                  <p className="text-4xs text-rose-600 dark:text-rose-400 mt-1 font-medium">{formatRupiah(financeSummary.pendingExpenses)} Pending approval</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="p-5 flex flex-col justify-between h-30">
-                <div className="flex justify-between items-start">
-                  <span className="text-3xs font-bold text-muted-foreground uppercase">Margin Laba (%)</span>
-                  <Wallet className="w-4 h-4 text-amber-500" />
+            {/* Laba Bersih */}
+            <Card className="overflow-hidden border border-blue-500/10 bg-gradient-to-br from-blue-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
+              <CardContent className="p-6 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xs font-bold text-blue-800 dark:text-blue-300 tracking-wider uppercase">Laba Bersih</span>
+                  <div className="p-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">{financeSummary.profitMargin.toFixed(1)}%</p>
-                  <p className="text-4xs text-muted-foreground mt-1">Rasio efisiensi bersih usaha</p>
+                <div className="mt-2">
+                  <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.netProfit)}</p>
+                  <p className="text-4xs text-blue-600 dark:text-blue-400 mt-1 font-medium">Selisih kas masuk - kas keluar</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Margin Laba */}
+            <Card className="overflow-hidden border border-amber-500/10 bg-gradient-to-br from-amber-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
+              <CardContent className="p-6 flex flex-col justify-between h-32">
+                <div className="flex justify-between items-center">
+                  <span className="text-3xs font-bold text-amber-800 dark:text-amber-300 tracking-wider uppercase">Margin Laba</span>
+                  <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-2xl font-extrabold text-foreground tracking-tight">{financeSummary.profitMargin.toFixed(1)}%</p>
+                  <p className="text-4xs text-amber-600 dark:text-amber-400 mt-1 font-medium">Rasio efisiensi bersih usaha</p>
                 </div>
               </CardContent>
             </Card>
@@ -312,16 +324,37 @@ export default function FinancePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(financeSummary.categoryBreakdown).map(([cat, val]) => {
+                  {Object.entries(financeSummary.categoryBreakdown).map(([cat, val], index) => {
                     const pct = financeSummary.totalExpense > 0 ? (val / financeSummary.totalExpense) * 100 : 0;
+                    const colors = [
+                      'bg-indigo-500', 
+                      'bg-amber-500', 
+                      'bg-purple-500', 
+                      'bg-emerald-500', 
+                      'bg-rose-500', 
+                      'bg-sky-500'
+                    ];
+                    const colorClass = colors[index % colors.length];
+
+                    const categoryTranslations: Record<string, string> = {
+                      'Operational': 'Operasional',
+                      'Utilities': 'Utilitas (Listrik/Air)',
+                      'Rent': 'Sewa Tempat',
+                      'Refills': 'Refill Tabung',
+                      'Marketing': 'Pemasaran',
+                      'Salaries': 'Gaji Karyawan',
+                      'Other': 'Lain-lain'
+                    };
+                    const translatedCat = categoryTranslations[cat] || cat;
+
                     return (
                       <div key={cat} className="space-y-1">
                         <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-muted-foreground">{cat}</span>
+                          <span className="text-muted-foreground">{translatedCat}</span>
                           <span className="text-foreground">{formatRupiah(val)} ({pct.toFixed(0)}%)</span>
                         </div>
                         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-rose-500 rounded-full" style={{ width: `${pct}%` }} />
+                          <div className={`h-full ${colorClass} rounded-full`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -334,7 +367,7 @@ export default function FinancePage() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Rasio Laba Terhadap Pengeluaran</CardTitle>
-                <CardDescription>Grafik perbandingan pengeluaran (merah) vs laba bersih (hijau).</CardDescription>
+                <CardDescription>Grafik perbandingan pendapatan (hijau), pengeluaran (merah) vs laba bersih (biru).</CardDescription>
               </CardHeader>
               <CardContent>
                 <BarChart
@@ -344,7 +377,8 @@ export default function FinancePage() {
                     { label: 'Laba Bersih', value: financeSummary.netProfit }
                   ]}
                   height={180}
-                  color="#ef4444"
+                  colors={['#10b981', '#ef4444', '#3b82f6']}
+                  isRupiah={true}
                 />
               </CardContent>
             </Card>

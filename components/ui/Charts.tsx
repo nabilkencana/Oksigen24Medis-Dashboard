@@ -137,12 +137,14 @@ interface BarChartProps {
   data: ChartDataItem[];
   height?: number;
   color?: string;
+  colors?: string[];
+  isRupiah?: boolean;
 }
 
-export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProps) {
+export function BarChart({ data, height = 200, color = '#10b981', colors, isRupiah = false }: BarChartProps) {
   if (data.length === 0) return null;
 
-  const padding = 40;
+  const padding = 55; // Increase padding to accommodate Rupiah labels
   const chartWidth = 500;
   const chartHeight = height;
 
@@ -150,13 +152,22 @@ export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProp
   const minVal = 0;
   const range = maxVal - minVal;
 
-  const barWidth = Math.max(12, (chartWidth - padding * 2) / data.length - 12);
+  const barWidth = Math.max(12, (chartWidth - padding * 2) / data.length - 16);
 
   // Generate grid values
   const gridSteps = 4;
   const gridVals = Array.from({ length: gridSteps + 1 }, (_, i) => {
     return Math.round(minVal + (range * i) / gridSteps);
   });
+
+  const formatValue = (v: number) => {
+    if (isRupiah) {
+      if (v >= 1000000) return `Rp ${(v / 1000000).toFixed(1)} jt`;
+      if (v >= 1000) return `Rp ${(v / 1000).toFixed(0)} rb`;
+      return `Rp ${v}`;
+    }
+    return String(v);
+  };
 
   return (
     <div className="w-full">
@@ -184,7 +195,7 @@ export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProp
                 fontWeight="500"
                 className="fill-muted-foreground font-sans"
               >
-                {v}
+                {formatValue(v)}
               </text>
             </g>
           );
@@ -192,9 +203,10 @@ export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProp
 
         {/* Bars */}
         {data.map((d, index) => {
-          const x = padding + (index * (chartWidth - padding * 2)) / data.length + 6;
+          const x = padding + (index * (chartWidth - padding * 2)) / data.length + 10;
           const y = chartHeight - padding - ((d.value - minVal) * (chartHeight - padding * 2)) / range;
           const barHeight = chartHeight - padding - y;
+          const barColor = colors ? colors[index % colors.length] : color;
 
           return (
             <g key={index} className="group cursor-pointer">
@@ -203,9 +215,9 @@ export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProp
                 y={y}
                 width={barWidth}
                 height={Math.max(barHeight, 2)}
-                rx="2"
-                fill={color}
-                opacity="0.8"
+                rx="4"
+                fill={barColor}
+                opacity="0.85"
                 className="transition-all duration-150 hover:opacity-100"
               />
               <text
@@ -218,7 +230,7 @@ export function BarChart({ data, height = 200, color = '#10b981' }: BarChartProp
               >
                 {d.label}
               </text>
-              <title>{`${d.label}: ${d.value} unit`}</title>
+              <title>{`${d.label}: ${isRupiah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(d.value) : `${d.value} unit`}`}</title>
             </g>
           );
         })}

@@ -313,15 +313,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: 'Approved'
       }));
 
-      const txFromIncomes = (incomesData.items || []).map((inc: any) => ({
-        id: `inc-${inc.id}`,
-        date: new Date(inc.date).toISOString().split('T')[0],
-        type: inc.referenceType === 'SALE' ? ('Sale' as const) : ('Rental' as const),
-        description: inc.description || 'Pendapatan',
-        amount: Number(inc.amount) || 0,
-        status: 'Completed' as const,
-        referenceId: inc.referenceId || inc.id
-      }));
+      const txFromIncomes = (incomesData.items || []).map((inc: any) => {
+        let desc = inc.description || 'Pendapatan';
+        if (desc.startsWith('Payment for rental invoice ')) {
+          desc = desc.replace('Payment for rental invoice ', 'Pembayaran invoice sewa ');
+        } else if (desc.startsWith('Payment for sales invoice ')) {
+          desc = desc.replace('Payment for sales invoice ', 'Pembayaran invoice penjualan ');
+        }
+
+        return {
+          id: `inc-${inc.id}`,
+          date: new Date(inc.date).toISOString().split('T')[0],
+          type: inc.referenceType === 'SALE' ? ('Sale' as const) : ('Rental' as const),
+          description: desc,
+          amount: Number(inc.amount) || 0,
+          status: 'Completed' as const,
+          referenceId: inc.referenceId || inc.id
+        };
+      });
 
       const txFromExpenses = (expensesData.items || []).map((exp: any) => ({
         id: `exp-${exp.id}`,

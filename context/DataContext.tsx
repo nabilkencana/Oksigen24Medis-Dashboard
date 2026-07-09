@@ -415,7 +415,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateCustomer = async (id: string, cust: any) => {
     await fetchApi(`/inventory/customers/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify(cust)
+      body: JSON.stringify({
+        name: cust.name,
+        phone: cust.phone,
+        email: cust.email,
+        address: cust.address
+      })
     });
     await refreshAllData();
   };
@@ -525,14 +530,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProduct = async (id: string, prod: any) => {
-    const payload: any = { ...prod };
-    if (prod.stock !== undefined) {
-      payload.currentStock = Number(prod.stock);
-      delete payload.stock;
-    }
-    if (prod.price) payload.price = Number(prod.price);
-    if (prod.cost) payload.cost = Number(prod.cost);
+    const matchedCategory = categories.find(cat => cat.name === prod.category);
+    const payload: any = {};
     
+    if (prod.name !== undefined) payload.name = prod.name;
+    if (prod.description !== undefined) payload.description = prod.description || '';
+    if (prod.price !== undefined) payload.price = Number(prod.price);
+    if (prod.cost !== undefined) payload.cost = Number(prod.cost);
+    if (prod.stock !== undefined) payload.currentStock = Number(prod.stock);
+    if (matchedCategory) payload.categoryId = matchedCategory.id;
+
     await fetchApi(`/inventory/products/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload)

@@ -419,7 +419,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         name: cust.name,
         phone: cust.phone,
         email: cust.email,
-        address: cust.address
+        address: cust.address,
+        isActive: cust.status === undefined ? undefined : (cust.status === 'Active')
       })
     });
     await refreshAllData();
@@ -452,7 +453,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         name: vend.companyName,
         phone: vend.phone,
         email: vend.email,
-        address: vend.address
+        address: vend.address,
+        isActive: vend.status === undefined ? undefined : (vend.status === 'Active')
       })
     });
     await refreshAllData();

@@ -73,31 +73,65 @@ export default function Home() {
 
   const todayRevenue = transactions
     .filter(t => t.date === todayStr && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
-    .reduce((sum, t) => sum + t.amount, 0) || 1250000; // fallback dummy today
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const monthlyRevenue = transactions
     .filter(t => t.date.startsWith(thisMonthStr) && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
-    .reduce((sum, t) => sum + t.amount, 0) || 48900000; // fallback monthly
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  // Charts data compilation
-  const monthlyRevenueData = [
-    { label: 'Jan', value: 34000000 },
-    { label: 'Feb', value: 38000000 },
-    { label: 'Mar', value: 42000000 },
-    { label: 'Apr', value: 45000000 },
-    { label: 'May', value: 41000000 },
-    { label: 'Jun', value: 48900000 }
-  ];
+  // Yesterday's revenue calculation
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const yesterdayRevenue = transactions
+    .filter(t => t.date === yesterdayStr && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
+    .reduce((sum, t) => sum + t.amount, 0);
 
-  const rentalTrendData = [
-    { label: 'Mon', value: 12 },
-    { label: 'Tue', value: 18 },
-    { label: 'Wed', value: 15 },
-    { label: 'Thu', value: 22 },
-    { label: 'Fri', value: 26 },
-    { label: 'Sat', value: 14 },
-    { label: 'Sun', value: 8 }
-  ];
+  // Revenue growth percentage vs yesterday
+  let revenueGrowthPct = 0;
+  if (yesterdayRevenue > 0) {
+    revenueGrowthPct = ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100;
+  } else if (todayRevenue > 0) {
+    revenueGrowthPct = 100;
+  }
+
+  // Active rentals count 7 days ago vs today
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+  const activeRentalsWeekAgoCount = rentals.filter(r => {
+    const isRentingBefore = r.rentDate <= weekAgoStr;
+    const isNotReturnedYet = !r.actualReturnDate || r.actualReturnDate > weekAgoStr;
+    return isRentingBefore && isNotReturnedYet;
+  }).length;
+
+  let activeRentalsGrowthPct = 0;
+  if (activeRentalsWeekAgoCount > 0) {
+    activeRentalsGrowthPct = ((activeRentalsCount - activeRentalsWeekAgoCount) / activeRentalsWeekAgoCount) * 100;
+  } else if (activeRentalsCount > 0) {
+    activeRentalsGrowthPct = 100;
+  }
+
+  // Dynamically calculate monthly revenue data for charts based on last 6 months
+  const getMonthlyRevenueData = () => {
+    const result = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleString('id-ID', { month: 'short' });
+      const yearMonth = d.toISOString().substring(0, 7); // "YYYY-MM"
+      
+      const value = transactions
+        .filter(t => t.date.startsWith(yearMonth) && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
+        .reduce((sum, t) => sum + t.amount, 0);
+        
+      result.push({ label, value });
+    }
+    return result;
+  };
+
+  const monthlyRevenueData = getMonthlyRevenueData();
 
   const cylinderStatusData = [
     { label: 'Tersedia', value: availableCylindersCount },
@@ -241,9 +275,14 @@ export default function Home() {
             </div>
             <div>
               <p className="text-xl font-bold tracking-tight">{formatRupiah(todayRevenue)}</p>
-              <p className="text-4xs text-emerald-600 dark:text-emerald-400 font-bold mt-1.5 flex items-center gap-0.5">
-                <ArrowUpRight className="w-3 h-3" /> +12.4% <span className="text-muted-foreground font-medium font-sans">vs kemarin</span>
-              </p>
+              {revenueGrowthPct !== 0 ? (
+                <p className={`text-4xs font-bold mt-1.5 flex items-center gap-0.5 ${revenueGrowthPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                  {revenueGrowthPct > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  {revenueGrowthPct > 0 ? '+' : ''}{revenueGrowthPct.toFixed(1)}% <span className="text-muted-foreground font-medium font-sans">vs kemarin</span>
+                </p>
+              ) : (
+                <p className="text-4xs text-muted-foreground font-medium mt-1.5">Sama dengan kemarin</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -259,9 +298,14 @@ export default function Home() {
             </div>
             <div>
               <p className="text-xl font-bold tracking-tight">{activeRentalsCount} <span className="text-2xs text-muted-foreground font-medium">Tabung</span></p>
-              <p className="text-4xs text-rose-500 font-bold mt-1.5 flex items-center gap-0.5">
-                <ArrowDownRight className="w-3 h-3" /> -2.4% <span className="text-muted-foreground font-medium font-sans">vs minggu lalu</span>
-              </p>
+              {activeRentalsGrowthPct !== 0 ? (
+                <p className={`text-4xs font-bold mt-1.5 flex items-center gap-0.5 ${activeRentalsGrowthPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                  {activeRentalsGrowthPct > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                  {activeRentalsGrowthPct > 0 ? '+' : ''}{activeRentalsGrowthPct.toFixed(1)}% <span className="text-muted-foreground font-medium font-sans">vs minggu lalu</span>
+                </p>
+              ) : (
+                <p className="text-4xs text-muted-foreground font-medium mt-1.5">Stabil vs minggu lalu</p>
+              )}
             </div>
           </CardContent>
         </Card>

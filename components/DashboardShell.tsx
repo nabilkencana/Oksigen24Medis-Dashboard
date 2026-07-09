@@ -183,14 +183,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card text-card-foreground shrink-0 select-none">
         
         {/* Sidebar Logo */}
-        <div className="h-16 flex items-center gap-3.5 px-6 border-b border-border/60">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-lg shadow-sm">
-            O₂
-          </div>
-          <div>
-            <h1 className="font-bold text-sm leading-tight text-foreground">Oksigen Medis 24 Jam</h1>
-            <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">ERP SYSTEM v1.0</p>
-          </div>
+        <div className="h-16 flex items-center px-6 border-b border-border/60">
+          <img src="/website-logo.png" alt="Website Logo" className="h-9 object-contain" />
         </div>
 
         {/* Sidebar Links */}
@@ -302,49 +296,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </button>
 
-            {/* Notification Dropdown */}
-            <div className="relative" ref={notificationRef}>
-              <button
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative p-2 rounded-lg border border-border bg-muted/10 hover:bg-accent hover:text-accent-foreground text-muted-foreground cursor-pointer transition-colors"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-card" />
-              </button>
 
-              <AnimatePresence>
-                {isNotificationsOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 mt-2 w-80 bg-card border border-border rounded-xl shadow-2xl p-4 z-50 flex flex-col gap-3"
-                  >
-                    <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                      <span className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Notifikasi</span>
-                      <button className="text-[10px] font-bold text-primary hover:underline cursor-pointer">Tandai dibaca</button>
-                    </div>
-                    <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                      {mockNotifications.map(n => (
-                        <div key={n.id} className="flex gap-2.5 items-start p-2 rounded-lg hover:bg-muted/40 transition-colors cursor-pointer">
-                          <div className="mt-0.5 shrink-0">
-                            {n.type === 'alert' && <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />}
-                            {n.type === 'warning' && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
-                            {n.type === 'info' && <Clock className="w-3.5 h-3.5 text-blue-500" />}
-                            {n.type === 'approval' && <FileText className="w-3.5 h-3.5 text-emerald-500" />}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold leading-tight text-foreground">{n.title}</p>
-                            <p className="text-3xs text-muted-foreground mt-0.5 leading-snug">{n.desc}</p>
-                            <p className="text-4xs text-muted-foreground/70 font-semibold mt-1">{n.time}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
@@ -438,9 +390,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-6 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-md">
-                    O₂
-                  </div>
+                  <img src="/website-logo.png" alt="Website Logo" className="h-8 w-8 object-contain" />
                   <h1 className="font-bold text-sm text-foreground">Oksigen24Medis</h1>
                 </div>
                 <button

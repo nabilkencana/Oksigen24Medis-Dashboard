@@ -16,7 +16,7 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabType) || 'users';
   
-  const { theme, toggleTheme } = useData();
+  const { theme, toggleTheme, user } = useData();
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -33,9 +33,21 @@ export default function SettingsPage() {
     name: 'Administrator Utama',
     email: 'admin@oksigen24jam.co.id',
     phone: '0811-9988-7766',
-    password: '••••••••',
+    password: 'Password123!',
     role: 'Admin'
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || 'Administrator Utama',
+        email: user.email || 'admin@oksigen24jam.co.id',
+        phone: user.phone || '0811-9988-7766',
+        password: 'Password123!',
+        role: (user.role && typeof user.role === 'object' ? user.role.name : user.role) || 'Admin'
+      });
+    }
+  }, [user]);
 
   const handleSave = (e: React.FormEvent, msg: string) => {
     e.preventDefault();

@@ -97,9 +97,7 @@ export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
         <div className="flex-1 p-8 sm:p-10 bg-muted/20 dark:bg-muted/10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border transition-colors duration-300">
           <div>
             <div className="flex items-center gap-3.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold text-lg shadow-sm">
-                O₂
-              </div>
+              <img src="/24hours-logo.jpg" alt="Website Logo" className="h-9 w-9 object-contain" />
               <div>
                 <h1 className="font-bold text-sm leading-tight text-foreground">Oksigen Medis 24 Jam</h1>
                 <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">ERP SYSTEM v1.0</p>

@@ -45,9 +45,7 @@ export default function Home() {
 
   // Drawer states
   const [activeDrawer, setActiveDrawer] = useState<'rental' | 'refill' | 'sale' | 'expense' | null>(null);
-
-  // Form states
-  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
   const [isSaving, setIsSaving] = useState(false);
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const });
@@ -123,10 +121,11 @@ export default function Home() {
         rentDate: rentalForm.rentDate,
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
-        rentalFee: Number(rentalForm.rentalFee) || 0
+        rentalFee: Number(rentalForm.rentalFee) || 0,
+        paymentMethod: rentalForm.paymentMethod || 'Cash'
       });
       setActiveDrawer(null);
-      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -501,6 +500,17 @@ export default function Home() {
               onChange={e => setRentalForm({ ...rentalForm, rentalFee: e.target.value })}
             />
           </div>
+          <Select
+            label="Metode Pembayaran *"
+            id="rentPayMethod"
+            value={rentalForm.paymentMethod || 'Cash'}
+            onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
+            options={[
+              { value: 'Cash', label: 'Tunai (Cash)' },
+              { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
+              { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+            ]}
+          />
           <div className="border-t border-border pt-4 flex gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
             <Button type="submit" variant="success" className="flex-1" disabled={isSaving}>

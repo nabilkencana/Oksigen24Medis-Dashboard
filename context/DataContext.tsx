@@ -47,7 +47,7 @@ interface DataContextType {
   updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   // Workflows
-  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number }) => Promise<void>;
+  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string }) => Promise<void>;
   returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => Promise<void>;
   sendToRefill: (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => Promise<void>;
   receiveRefill: (refillId: string, returnDate: string) => Promise<void>;
@@ -228,12 +228,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const cylSize = r.items?.[0]?.cylinder?.size || '1m3';
         const defaultDeposit = cylSize === '1m3' ? 200000 : cylSize === '2m3' ? 300000 : 500000;
         let depositVal = defaultDeposit;
-        if (r.notes && r.notes.startsWith('[DEPOSIT:')) {
-          const match = r.notes.match(/^\[DEPOSIT:\s*(\d+)\]/);
+        if (r.notes && r.notes.includes('[DEPOSIT:')) {
+          const match = r.notes.match(/\[DEPOSIT:\s*(\d+)\]/);
           if (match) {
             depositVal = Number(match[1]);
           }
         }
+
+        let paymentMethodVal: 'Cash' | 'Transfer' | 'E-Wallet' = 'Cash';
+        if (r.notes && r.notes.includes('[PAYMENT:')) {
+          const match = r.notes.match(/\[PAYMENT:\s*([^\]]+)\]/);
+          if (match) {
+            const pm = match[1].trim().toUpperCase();
+            paymentMethodVal = pm === 'TRANSFER' ? 'Transfer' : pm === 'E_WALLET' ? 'E-Wallet' : 'Cash';
+          }
+        }
+
         return {
           id: r.id,
           customerId: r.customerId,
@@ -245,7 +255,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           actualReturnDate: r.returnDate ? new Date(r.returnDate).toISOString().split('T')[0] : undefined,
           deposit: depositVal,
           rentalFee: Number(r.totalAmount) || 0,
-          status: mapRentalStatusToFrontend(r.status)
+          status: mapRentalStatusToFrontend(r.status),
+          paymentMethod: paymentMethodVal
         };
       });
 
@@ -326,6 +337,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const sale = mappedSales.find(s => s.id === inc.referenceId);
           if (sale) {
             payMethod = sale.paymentMethod;
+          }
+        } else if (inc.referenceType === 'RENTAL' && inc.referenceId) {
+          const rental = mappedRentals.find(r => r.id === inc.referenceId);
+          if (rental && rental.paymentMethod) {
+            payMethod = rental.paymentMethod;
           }
         }
 
@@ -577,7 +593,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Workflow integrations
   const createRental = async (rentalData: any) => {
     const depositAmount = Number(rentalData.deposit) || 0;
-    const notesPayload = `[DEPOSIT: ${depositAmount}]`;
+    const payMethod = (rentalData.paymentMethod || 'CASH').toUpperCase();
+    const notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}]`;
 
     await fetchApi('/transactions/rentals', {
       method: 'POST',

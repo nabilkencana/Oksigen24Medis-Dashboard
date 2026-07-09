@@ -52,6 +52,7 @@ export interface Rental {
   deposit: number;
   rentalFee: number;
   status: 'Active' | 'Returned' | 'Overdue';
+  paymentMethod?: 'Cash' | 'Transfer' | 'E-Wallet';
 }
 
 export interface Refill {

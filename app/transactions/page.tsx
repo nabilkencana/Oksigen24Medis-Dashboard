@@ -70,7 +70,7 @@ export default function TransactionsPage() {
   const [isRestockDrawerOpen, setIsRestockDrawerOpen] = useState(false);
 
   // Form states
-  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
+  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
   const [refillLoadingId, setRefillLoadingId] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
@@ -82,6 +82,7 @@ export default function TransactionsPage() {
   const [posProduct, setPosProduct] = useState('');
   const [posQty, setPosQty] = useState('1');
   const [posPaymentMethod, setPosPaymentMethod] = useState<'Cash' | 'Transfer' | 'E-Wallet'>('Cash');
+  const [posServiceType, setPosServiceType] = useState<'Kios' | 'Antar'>('Kios');
   const [completedSaleInvoice, setCompletedSaleInvoice] = useState<any>(null);
 
   // Supplier Restock Cart State
@@ -173,12 +174,14 @@ export default function TransactionsPage() {
         customerId: posCustomer,
         items: posCart,
         date: new Date().toISOString().split('T')[0],
-        paymentMethod: posPaymentMethod
+        paymentMethod: posPaymentMethod,
+        serviceType: posServiceType
       });
 
       setCompletedSaleInvoice(sale);
       setPosCart([]);
       setPosCustomer('');
+      setPosServiceType('Kios');
     } catch (err: any) {
       alert(err.message || 'Gagal memproses transaksi.');
     } finally {
@@ -262,10 +265,11 @@ export default function TransactionsPage() {
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
         rentalFee: Number(rentalForm.rentalFee) || 0,
-        paymentMethod: rentalForm.paymentMethod || 'Cash'
+        paymentMethod: rentalForm.paymentMethod || 'Cash',
+        serviceType: rentalForm.serviceType || 'Kios'
       });
       setIsRentalDrawerOpen(false);
-      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -758,6 +762,17 @@ export default function TransactionsPage() {
                   ]}
                 />
 
+                <Select
+                  label="Tipe Layanan"
+                  id="posServiceType"
+                  value={posServiceType}
+                  onChange={e => setPosServiceType(e.target.value as any)}
+                  options={[
+                    { value: 'Kios', label: 'Ambil di Kios' },
+                    { value: 'Antar', label: 'Kirim / Antar Alamat' }
+                  ]}
+                />
+
                 <Button
                   className="w-full mt-4 flex items-center justify-center gap-1.5"
                   disabled={posCart.length === 0 || !posCustomer || isSaving}
@@ -1009,17 +1024,29 @@ export default function TransactionsPage() {
               onChange={e => setRentalForm({ ...rentalForm, rentalFee: e.target.value })}
             />
           </div>
-          <Select
-            label="Metode Pembayaran *"
-            id="drawRentPay"
-            value={rentalForm.paymentMethod || 'Cash'}
-            onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
-            options={[
-              { value: 'Cash', label: 'Tunai (Cash)' },
-              { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
-              { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
-            ]}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Metode Pembayaran *"
+              id="drawRentPay"
+              value={rentalForm.paymentMethod || 'Cash'}
+              onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
+              options={[
+                { value: 'Cash', label: 'Tunai (Cash)' },
+                { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
+                { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+              ]}
+            />
+            <Select
+              label="Tipe Layanan *"
+              id="drawRentServiceType"
+              value={rentalForm.serviceType || 'Kios'}
+              onChange={e => setRentalForm({ ...rentalForm, serviceType: e.target.value as any })}
+              options={[
+                { value: 'Kios', label: 'Ambil di Kios' },
+                { value: 'Antar', label: 'Kirim / Antar Alamat' }
+              ]}
+            />
+          </div>
           <div className="border-t border-border pt-4 flex gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRentalDrawerOpen(false)} disabled={isSaving}>Kembali</Button>
             <Button type="submit" className="flex-1" disabled={isSaving}>

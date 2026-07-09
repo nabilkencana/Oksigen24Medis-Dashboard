@@ -54,6 +54,7 @@ export interface Rental {
   status: 'Active' | 'Returned' | 'Overdue';
   paymentMethod?: 'Cash' | 'Transfer' | 'E-Wallet';
   invoiceNo?: string;
+  serviceType?: 'Kios' | 'Antar';
 }
 
 export interface Refill {
@@ -99,6 +100,7 @@ export interface Sale {
   paymentMethod: 'Cash' | 'Transfer' | 'E-Wallet';
   status: 'Paid' | 'Unpaid';
   invoiceNo?: string;
+  serviceType?: 'Kios' | 'Antar';
 }
 
 export interface Expense {

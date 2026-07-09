@@ -45,10 +45,10 @@ export default function Home() {
 
   // Drawer states
   const [activeDrawer, setActiveDrawer] = useState<'rental' | 'refill' | 'sale' | 'expense' | null>(null);
-  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
+  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
-  const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const });
+  const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const, serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [expenseForm, setExpenseForm] = useState({ category: 'Operational' as const, description: '', amount: '', date: '' });
 
   // Greetings helper
@@ -122,10 +122,11 @@ export default function Home() {
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
         rentalFee: Number(rentalForm.rentalFee) || 0,
-        paymentMethod: rentalForm.paymentMethod || 'Cash'
+        paymentMethod: rentalForm.paymentMethod || 'Cash',
+        serviceType: rentalForm.serviceType || 'Kios'
       });
       setActiveDrawer(null);
-      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash' });
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -176,10 +177,11 @@ export default function Home() {
           price: product.price
         }],
         date: new Date().toISOString().split('T')[0],
-        paymentMethod: saleForm.paymentMethod
+        paymentMethod: saleForm.paymentMethod,
+        serviceType: saleForm.serviceType || 'Kios'
       });
       setActiveDrawer(null);
-      setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' });
+      setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash', serviceType: 'Kios' });
     } catch (err: any) {
       alert(err.message || 'Gagal menyimpan penjualan.');
     } finally {
@@ -500,17 +502,29 @@ export default function Home() {
               onChange={e => setRentalForm({ ...rentalForm, rentalFee: e.target.value })}
             />
           </div>
-          <Select
-            label="Metode Pembayaran *"
-            id="rentPayMethod"
-            value={rentalForm.paymentMethod || 'Cash'}
-            onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
-            options={[
-              { value: 'Cash', label: 'Tunai (Cash)' },
-              { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
-              { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
-            ]}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Metode Pembayaran *"
+              id="rentPayMethod"
+              value={rentalForm.paymentMethod || 'Cash'}
+              onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
+              options={[
+                { value: 'Cash', label: 'Tunai (Cash)' },
+                { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
+                { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+              ]}
+            />
+            <Select
+              label="Tipe Layanan *"
+              id="rentServiceType"
+              value={rentalForm.serviceType || 'Kios'}
+              onChange={e => setRentalForm({ ...rentalForm, serviceType: e.target.value as any })}
+              options={[
+                { value: 'Kios', label: 'Ambil di Kios' },
+                { value: 'Antar', label: 'Kirim / Antar Alamat' }
+              ]}
+            />
+          </div>
           <div className="border-t border-border pt-4 flex gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
             <Button type="submit" variant="success" className="flex-1" disabled={isSaving}>
@@ -638,6 +652,16 @@ export default function Home() {
               ]}
             />
           </div>
+          <Select
+            label="Tipe Layanan *"
+            id="saleServiceType"
+            value={saleForm.serviceType || 'Kios'}
+            onChange={e => setSaleForm({ ...saleForm, serviceType: e.target.value as any })}
+            options={[
+              { value: 'Kios', label: 'Ambil di Kios' },
+              { value: 'Antar', label: 'Kirim / Antar Alamat' }
+            ]}
+          />
           <div className="border-t border-border pt-4 flex gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
             <Button type="submit" variant="success" className="flex-1" disabled={isSaving}>

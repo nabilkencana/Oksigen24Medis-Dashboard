@@ -47,13 +47,13 @@ interface DataContextType {
   updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   // Workflows
-  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string }) => Promise<void>;
+  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string; serviceType?: 'Kios' | 'Antar' }) => Promise<void>;
   returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => Promise<void>;
   sendToRefill: (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => Promise<void>;
   receiveRefill: (refillId: string, returnDate: string) => Promise<void>;
   createStockMovement: (mvt: Omit<StockMovement, 'id' | 'date'>) => Promise<void>;
   createPurchase: (pur: { vendorId: string; items: Array<{ itemId: string; name: string; qty: number; cost: number }>; date: string }) => Promise<void>;
-  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => Promise<any>;
+  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod']; serviceType?: 'Kios' | 'Antar' }) => Promise<any>;
   createExpense: (exp: Omit<Expense, 'id' | 'status'>) => Promise<void>;
   approveExpense: (expenseId: string) => Promise<void>;
 }
@@ -244,6 +244,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        let serviceTypeVal: 'Kios' | 'Antar' = 'Kios';
+        if (r.notes && r.notes.includes('[SERVICE:')) {
+          const match = r.notes.match(/\[SERVICE:\s*([^\]]+)\]/);
+          if (match) {
+            serviceTypeVal = match[1].trim().toUpperCase() === 'ANTAR' ? 'Antar' : 'Kios';
+          }
+        }
+
         return {
           id: r.id,
           customerId: r.customerId,
@@ -257,7 +265,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           rentalFee: Number(r.totalAmount) || 0,
           status: mapRentalStatusToFrontend(r.status),
           paymentMethod: paymentMethodVal,
-          invoiceNo: r.invoiceNo
+          invoiceNo: r.invoiceNo,
+          serviceType: serviceTypeVal
         };
       });
 
@@ -300,22 +309,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: p.status === 'PAID' ? 'Completed' : 'Pending'
       }));
 
-      const mappedSales: Sale[] = (salesData.items || []).map((s: any) => ({
-        id: s.id,
-        customerId: s.customerId || '',
-        customerName: s.customer?.name || 'Umum',
-        items: (s.items || []).map((i: any) => ({
-          productId: i.productId,
-          name: i.product?.name || 'Product',
-          qty: i.quantity,
-          price: Number(i.unitPrice) || 0
-        })),
-        totalAmount: Number(s.totalAmount) || 0,
-        date: new Date(s.createdAt).toISOString().split('T')[0],
-        paymentMethod: s.paymentMethod === 'TRANSFER' ? 'Transfer' : s.paymentMethod === 'E_WALLET' ? 'E-Wallet' : 'Cash',
-        status: s.status === 'PAID' ? 'Paid' : 'Unpaid',
-        invoiceNo: s.invoiceNo
-      }));
+        const mappedSales: Sale[] = (salesData.items || []).map((s: any) => {
+          let rawPm = s.paymentMethod || 'CASH';
+          let serviceTypeVal: 'Kios' | 'Antar' = 'Kios';
+          if (rawPm.includes('[SERVICE:')) {
+            const match = rawPm.match(/\[SERVICE:\s*([^\]]+)\]/);
+            if (match) {
+              serviceTypeVal = match[1].trim().toUpperCase() === 'ANTAR' ? 'Antar' : 'Kios';
+            }
+            rawPm = rawPm.split('[SERVICE:')[0].trim();
+          }
+          const cleanPm = rawPm.toUpperCase() === 'TRANSFER' ? 'Transfer' : rawPm.toUpperCase() === 'E_WALLET' ? 'E-Wallet' : 'Cash';
+
+          return {
+            id: s.id,
+            customerId: s.customerId || '',
+            customerName: s.customer?.name || 'Umum',
+            items: (s.items || []).map((i: any) => ({
+              productId: i.productId,
+              name: i.product?.name || 'Product',
+              qty: i.quantity,
+              price: Number(i.unitPrice) || 0
+            })),
+            totalAmount: Number(s.totalAmount) || 0,
+            date: new Date(s.createdAt).toISOString().split('T')[0],
+            paymentMethod: cleanPm,
+            status: s.status === 'PAID' ? 'Paid' : 'Unpaid',
+            invoiceNo: s.invoiceNo,
+            serviceType: serviceTypeVal
+          };
+        });
 
       const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => {
         let desc = e.description || '';
@@ -624,7 +647,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const createRental = async (rentalData: any) => {
     const depositAmount = Number(rentalData.deposit) || 0;
     const payMethod = (rentalData.paymentMethod || 'CASH').toUpperCase();
-    const notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}]`;
+    const sType = (rentalData.serviceType || 'Kios').toUpperCase();
+    const notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}] [SERVICE: ${sType}]`;
 
     await fetchApi('/transactions/rentals', {
       method: 'POST',
@@ -702,6 +726,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const createSale = async (sale: any) => {
+    const sType = (sale.serviceType || 'Kios').toUpperCase();
+    const rawPm = sale.paymentMethod.toUpperCase() === 'E-WALLET' ? 'E_WALLET' : sale.paymentMethod.toUpperCase();
+    const pmPayload = `${rawPm} [SERVICE: ${sType}]`;
+
     const res = await fetchApi('/transactions/sales', {
       method: 'POST',
       body: JSON.stringify({
@@ -711,7 +739,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           quantity: i.qty
         })),
         amountPaid: sale.items.reduce((sum: number, i: any) => sum + (i.qty * i.price), 0),
-        paymentMethod: sale.paymentMethod.toUpperCase() === 'E-WALLET' ? 'E_WALLET' : sale.paymentMethod.toUpperCase()
+        paymentMethod: pmPayload
       })
     });
 

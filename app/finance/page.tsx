@@ -519,7 +519,7 @@ export default function FinancePage() {
           <Input
             label="Nominal Biaya (Rp) *"
             id="expAmount"
-            type="number"
+            isRupiah={true}
             value={expenseForm.amount}
             onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })}
             required

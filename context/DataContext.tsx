@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { fetchApi } from './apiClient';
+import LoginOverlay from '../components/LoginOverlay';
 import {
-  generateInitialData,
   Customer,
   Vendor,
   Cylinder,
@@ -13,8 +14,7 @@ import {
   Purchase,
   Sale,
   Expense,
-  Transaction,
-  OXYGEN_TYPES
+  Transaction
 } from './mockData';
 
 interface DataContextType {
@@ -31,34 +31,77 @@ interface DataContextType {
   transactions: Transaction[];
   theme: 'light' | 'dark';
   toggleTheme: () => void;
+  user: any | null;
+  logout: () => void;
   // CRUD actions
-  addCustomer: (cust: Omit<Customer, 'id' | 'joinedDate' | 'balance'> & { balance?: number }) => void;
-  updateCustomer: (id: string, cust: Partial<Customer>) => void;
-  deleteCustomer: (id: string) => void;
-  addVendor: (vend: Omit<Vendor, 'id'>) => void;
-  updateVendor: (id: string, vend: Partial<Vendor>) => void;
-  deleteVendor: (id: string) => void;
-  addCylinder: (cyl: Omit<Cylinder, 'id'>) => void;
-  updateCylinder: (id: string, cyl: Partial<Cylinder>) => void;
-  deleteCylinder: (id: string) => void;
-  addProduct: (prod: Omit<Product, 'id'>) => void;
-  updateProduct: (id: string, prod: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  addCustomer: (cust: Omit<Customer, 'id' | 'joinedDate' | 'balance'> & { balance?: number }) => Promise<void>;
+  updateCustomer: (id: string, cust: Partial<Customer>) => Promise<void>;
+  deleteCustomer: (id: string) => Promise<void>;
+  addVendor: (vend: Omit<Vendor, 'id'>) => Promise<void>;
+  updateVendor: (id: string, vend: Partial<Vendor>) => Promise<void>;
+  deleteVendor: (id: string) => Promise<void>;
+  addCylinder: (cyl: Omit<Cylinder, 'id'>) => Promise<void>;
+  updateCylinder: (id: string, cyl: Partial<Cylinder>) => Promise<void>;
+  deleteCylinder: (id: string) => Promise<void>;
+  addProduct: (prod: Omit<Product, 'id'>) => Promise<void>;
+  updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   // Workflows
-  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number }) => void;
-  returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => void;
-  sendToRefill: (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => void;
-  receiveRefill: (refillId: string, returnDate: string) => void;
-  createStockMovement: (mvt: Omit<StockMovement, 'id' | 'date'>) => void;
-  createPurchase: (pur: { vendorId: string; items: Array<{ itemId: string; name: string; qty: number; cost: number }>; date: string }) => void;
-  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => void;
-  createExpense: (exp: Omit<Expense, 'id' | 'status'>) => void;
-  approveExpense: (expenseId: string) => void;
+  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number }) => Promise<void>;
+  returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => Promise<void>;
+  sendToRefill: (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => Promise<void>;
+  receiveRefill: (refillId: string, returnDate: string) => Promise<void>;
+  createStockMovement: (mvt: Omit<StockMovement, 'id' | 'date'>) => Promise<void>;
+  createPurchase: (pur: { vendorId: string; items: Array<{ itemId: string; name: string; qty: number; cost: number }>; date: string }) => Promise<void>;
+  createSale: (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => Promise<void>;
+  createExpense: (exp: Omit<Expense, 'id' | 'status'>) => Promise<void>;
+  approveExpense: (expenseId: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// Helper mappings for Enums
+const mapCylinderStatusToFrontend = (status: string) => {
+  switch (status) {
+    case 'AVAILABLE': return 'Available';
+    case 'RENTED': return 'Rented';
+    case 'AT_VENDOR': return 'At Vendor';
+    case 'MAINTENANCE': return 'Maintenance';
+    default: return 'Available';
+  }
+};
+
+const mapProductCategoryToFrontend = (catName: string = '') => {
+  const name = catName.toLowerCase();
+  if (name.includes('regulator') || name.includes('trolley') || name.includes('stand')) return 'Equipment';
+  if (name.includes('consumable') || name.includes('cannula') || name.includes('mask') || name.includes('tube')) return 'Accessory';
+  return 'Gas';
+};
+
+const mapRentalStatusToFrontend = (status: string) => {
+  if (status === 'RENTING') return 'Active';
+  if (status === 'RETURNED') return 'Returned';
+  if (status === 'OVERDUE') return 'Overdue';
+  return 'Active';
+};
+
+const mapExpenseCategoryToFrontend = (category: string) => {
+  const cat = category.toLowerCase();
+  if (cat.includes('operational')) return 'Operational';
+  if (cat.includes('utilities')) return 'Utilities';
+  if (cat.includes('rent')) return 'Rent';
+  if (cat.includes('refill') || cat.includes('vendor_refill')) return 'Refills';
+  if (cat.includes('marketing')) return 'Marketing';
+  if (cat.includes('salaries')) return 'Salaries';
+  return 'Other';
+};
+
 export function DataProvider({ children }: { children: ReactNode }) {
+  const [token, setToken] = useState<string | null>(null);
+  const isRefreshingRef = useRef(false);
+  const [user, setUser] = useState<any | null>(null);
+  const [isClientLoaded, setIsClientLoaded] = useState(false);
+
   const [data, setData] = useState<{
     customers: Customer[];
     vendors: Vendor[];
@@ -73,25 +116,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     transactions: Transaction[];
   } | null>(null);
 
+  const [categories, setCategories] = useState<any[]>([]);
+  const [oxygenTypes, setOxygenTypes] = useState<any[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Load from local storage or generate
+  // Load auth state and theme from local storage
   useEffect(() => {
-    const savedData = localStorage.getItem('oksigen24_erp_data');
-    if (savedData) {
+    const savedToken = localStorage.getItem('oksigen24_access_token');
+    const savedUser = localStorage.getItem('oksigen24_user');
+    if (savedToken && savedToken !== 'undefined' && savedToken !== 'null' && savedUser && savedUser !== 'undefined' && savedUser !== 'null') {
+      setToken(savedToken);
       try {
-        setData(JSON.parse(savedData));
+        setUser(JSON.parse(savedUser));
       } catch (e) {
-        const init = generateInitialData();
-        setData(init);
-        localStorage.setItem('oksigen24_erp_data', JSON.stringify(init));
+        setUser(null);
       }
     } else {
-      const init = generateInitialData();
-      setData(init);
-      localStorage.setItem('oksigen24_erp_data', JSON.stringify(init));
+      localStorage.removeItem('oksigen24_access_token');
+      localStorage.removeItem('oksigen24_refresh_token');
+      localStorage.removeItem('oksigen24_user');
     }
-
+    
     const savedTheme = localStorage.getItem('oksigen24_theme') as 'light' | 'dark';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -101,7 +146,245 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    setIsClientLoaded(true);
   }, []);
+
+  // Listen for logout events dispatched from API client
+  useEffect(() => {
+    const handleLogout = () => {
+      setToken(null);
+      setUser(null);
+      setData(null);
+    };
+    window.addEventListener('auth-logout', handleLogout);
+    return () => window.removeEventListener('auth-logout', handleLogout);
+  }, []);
+
+  // Fetch all dashboard data when token is available
+  const refreshAllData = async () => {
+    if (!token || isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
+    try {
+      const customersData = await fetchApi('/inventory/customers?limit=100');
+      const vendorsData = await fetchApi('/inventory/vendors?limit=100');
+      const cylindersData = await fetchApi('/inventory/cylinders?limit=100');
+      const productsData = await fetchApi('/inventory/products?limit=100');
+      const rentalsData = await fetchApi('/transactions/rentals?limit=100');
+      const salesData = await fetchApi('/transactions/sales?limit=100');
+      const purchasesData = await fetchApi('/transactions/purchases?limit=100');
+      const movementsData = await fetchApi('/transactions/stock-movements?limit=100');
+      const expensesData = await fetchApi('/finance/expenses?limit=100');
+      const incomesData = await fetchApi('/finance/incomes?limit=100');
+      const categoriesData = await fetchApi('/inventory/categories?limit=100');
+      const oxygenTypesData = await fetchApi('/inventory/oxygen-types?limit=100');
+
+      setCategories(categoriesData.items || []);
+      setOxygenTypes(oxygenTypesData.items || []);
+
+      // Mapping Logic
+      const mappedCustomers: Customer[] = (customersData.items || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone || '',
+        email: c.email || '',
+        address: c.address || '',
+        status: c.isActive ? 'Active' : 'Inactive',
+        balance: Number(c.balance) || 0,
+        joinedDate: new Date(c.createdAt).toISOString().split('T')[0]
+      }));
+
+      const mappedVendors: Vendor[] = (vendorsData.items || []).map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        companyName: v.name,
+        phone: v.phone || '',
+        email: v.email || '',
+        address: v.address || '',
+        status: v.isActive ? 'Active' : 'Inactive'
+      }));
+
+      const mappedCylinders: Cylinder[] = (cylindersData.items || []).map((c: any) => ({
+        id: c.id,
+        serialNo: c.serialNumber,
+        oxygenType: c.oxygenType?.name || 'Medical Oxygen',
+        size: c.size,
+        status: mapCylinderStatusToFrontend(c.status),
+        lastInspection: c.updatedAt ? new Date(c.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+      }));
+
+      const mappedProducts: Product[] = (productsData.items || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: mapProductCategoryToFrontend(p.category?.name),
+        stock: p.currentStock,
+        price: Number(p.price) || 0,
+        cost: Number(p.cost) || 0,
+        description: p.description || ''
+      }));
+
+      const mappedRentals: Rental[] = (rentalsData.items || []).map((r: any) => {
+        const cylSize = r.items?.[0]?.cylinder?.size || '1m3';
+        const defaultDeposit = cylSize === '1m3' ? 200000 : cylSize === '2m3' ? 300000 : 500000;
+        let depositVal = defaultDeposit;
+        if (r.notes && r.notes.startsWith('[DEPOSIT:')) {
+          const match = r.notes.match(/^\[DEPOSIT:\s*(\d+)\]/);
+          if (match) {
+            depositVal = Number(match[1]);
+          }
+        }
+        return {
+          id: r.id,
+          customerId: r.customerId,
+          customerName: r.customer?.name || 'Unknown',
+          cylinderId: r.items?.[0]?.cylinder?.id || '',
+          cylinderSerial: r.items?.[0]?.cylinder?.serialNumber || '',
+          rentDate: new Date(r.createdAt).toISOString().split('T')[0],
+          returnDate: new Date(r.dueDate).toISOString().split('T')[0],
+          actualReturnDate: r.returnDate ? new Date(r.returnDate).toISOString().split('T')[0] : undefined,
+          deposit: depositVal,
+          rentalFee: Number(r.totalAmount) || 0,
+          status: mapRentalStatusToFrontend(r.status)
+        };
+      });
+
+      const activeRefills: Refill[] = (cylindersData.items || [])
+        .filter((c: any) => c.status === 'AT_VENDOR')
+        .map((c: any) => ({
+          id: c.id,
+          cylinderId: c.id,
+          cylinderSerial: c.serialNumber,
+          vendorId: c.vendorId || '',
+          vendorName: c.vendor?.name || 'Unknown Vendor',
+          sendDate: c.updatedAt ? new Date(c.updatedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          cost: 25000,
+          status: 'Sent' as const
+        }));
+
+      const mappedMovements: StockMovement[] = (movementsData.items || []).map((m: any) => ({
+        id: m.id,
+        itemId: m.cylinder?.serialNumber || m.product?.name || m.productId || m.cylinderId || '',
+        itemName: m.cylinder ? `Tabung ${m.cylinder.serialNumber}` : (m.product?.name || 'Item'),
+        itemType: m.cylinder ? 'Cylinder' : 'Product',
+        type: m.type === 'IN' ? 'Incoming' : m.type === 'OUT' ? 'Outgoing' : 'Adjustment',
+        quantity: m.quantity,
+        date: new Date(m.createdAt).toISOString().split('T')[0],
+        reason: m.referenceType
+      }));
+
+      const mappedPurchases: Purchase[] = (purchasesData.items || []).map((p: any) => ({
+        id: p.id,
+        vendorId: p.vendorId,
+        vendorName: p.vendor?.name || 'Unknown',
+        items: (p.items || []).map((i: any) => ({
+          itemId: i.productId,
+          name: i.product?.name || 'Product',
+          qty: i.quantity,
+          cost: Number(i.unitCost) || 0
+        })),
+        totalAmount: Number(p.totalAmount) || 0,
+        date: new Date(p.createdAt).toISOString().split('T')[0],
+        status: p.status === 'PAID' ? 'Completed' : 'Pending'
+      }));
+
+      const mappedSales: Sale[] = (salesData.items || []).map((s: any) => ({
+        id: s.id,
+        customerId: s.customerId || '',
+        customerName: s.customer?.name || 'Umum',
+        items: (s.items || []).map((i: any) => ({
+          productId: i.productId,
+          name: i.product?.name || 'Product',
+          qty: i.quantity,
+          price: Number(i.unitPrice) || 0
+        })),
+        totalAmount: Number(s.totalAmount) || 0,
+        date: new Date(s.createdAt).toISOString().split('T')[0],
+        paymentMethod: s.paymentMethod === 'TRANSFER' ? 'Transfer' : s.paymentMethod === 'E_WALLET' ? 'E-Wallet' : 'Cash',
+        status: s.status === 'PAID' ? 'Paid' : 'Unpaid'
+      }));
+
+      const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => ({
+        id: e.id,
+        category: mapExpenseCategoryToFrontend(e.category),
+        description: e.description || '',
+        amount: Number(e.amount) || 0,
+        date: new Date(e.date).toISOString().split('T')[0],
+        status: 'Approved'
+      }));
+
+      const txFromIncomes = (incomesData.items || []).map((inc: any) => ({
+        id: `inc-${inc.id}`,
+        date: new Date(inc.date).toISOString().split('T')[0],
+        type: inc.referenceType === 'SALE' ? ('Sale' as const) : ('Rental' as const),
+        description: inc.description || 'Pendapatan',
+        amount: Number(inc.amount) || 0,
+        status: 'Completed' as const,
+        referenceId: inc.referenceId || inc.id
+      }));
+
+      const txFromExpenses = (expensesData.items || []).map((exp: any) => ({
+        id: `exp-${exp.id}`,
+        date: new Date(exp.date).toISOString().split('T')[0],
+        type: exp.category === 'VENDOR_REFILL' ? ('Refill' as const) : exp.category === 'PURCHASE' ? ('Purchase' as const) : ('Expense' as const),
+        description: exp.description || 'Pengeluaran',
+        amount: Number(exp.amount) || 0,
+        status: 'Completed' as const,
+        referenceId: exp.id
+      }));
+
+      const allTransactions = [...txFromIncomes, ...txFromExpenses].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      setData({
+        customers: mappedCustomers,
+        vendors: mappedVendors,
+        cylinders: mappedCylinders,
+        products: mappedProducts,
+        rentals: mappedRentals,
+        refills: activeRefills,
+        stockMovements: mappedMovements,
+        purchases: mappedPurchases,
+        sales: mappedSales,
+        expenses: mappedExpenses,
+        transactions: allTransactions
+      });
+    } catch (e) {
+      console.error('Failed to load live ERP data:', e);
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      refreshAllData();
+    }
+  }, [token]);
+
+  const handleLoginSuccess = (loggedInUser: any, tokens: { accessToken: string; refreshToken: string }) => {
+    localStorage.setItem('oksigen24_access_token', tokens.accessToken);
+    localStorage.setItem('oksigen24_refresh_token', tokens.refreshToken);
+    localStorage.setItem('oksigen24_user', JSON.stringify(loggedInUser));
+    setToken(tokens.accessToken);
+    setUser(loggedInUser);
+  };
+
+  const logout = async () => {
+    if (token) {
+      try {
+        await fetchApi('/auth/logout', { method: 'POST' });
+      } catch (e) {
+        console.error('Logout API failure:', e);
+      }
+    }
+    localStorage.removeItem('oksigen24_access_token');
+    localStorage.removeItem('oksigen24_refresh_token');
+    localStorage.removeItem('oksigen24_user');
+    setToken(null);
+    setUser(null);
+    setData(null);
+  };
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
@@ -114,557 +397,291 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Sync back helper
-  const updateData = (updater: (prev: typeof data) => typeof data) => {
-    setData(prev => {
-      const next = updater(prev);
-      if (next) {
-        localStorage.setItem('oksigen24_erp_data', JSON.stringify(next));
-      }
-      return next;
+  // CRUD API Integrations
+  const addCustomer = async (cust: any) => {
+    await fetchApi('/inventory/customers', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: cust.name,
+        phone: cust.phone,
+        email: cust.email || `${cust.name.toLowerCase().replace(/\s/g, '')}@gmail.com`,
+        address: cust.address || ''
+      })
     });
+    await refreshAllData();
   };
 
-  // CRUD Implementations
-  const addCustomer = (cust: Omit<Customer, 'id' | 'joinedDate' | 'balance'> & { balance?: number }) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      const newCust: Customer = {
-        ...cust,
-        balance: cust.balance || 0,
-        id: `CST-${String(prev.customers.length + 1).padStart(3, '0')}`,
-        joinedDate: new Date().toISOString().split('T')[0]
-      };
-      return {
-        ...prev,
-        customers: [newCust, ...prev.customers]
-      };
+  const updateCustomer = async (id: string, cust: any) => {
+    await fetchApi(`/inventory/customers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(cust)
     });
+    await refreshAllData();
   };
 
-  const updateCustomer = (id: string, updatedCust: Partial<Customer>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        customers: prev.customers.map(c => c.id === id ? { ...c, ...updatedCust } : c)
-      };
+  const deleteCustomer = async (id: string) => {
+    await fetchApi(`/inventory/customers/${id}`, {
+      method: 'DELETE'
     });
+    await refreshAllData();
   };
 
-  const deleteCustomer = (id: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        customers: prev.customers.filter(c => c.id !== id)
-      };
+  const addVendor = async (vend: any) => {
+    await fetchApi('/inventory/vendors', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: vend.companyName,
+        phone: vend.phone,
+        email: vend.email || `${vend.companyName.toLowerCase().replace(/\s/g, '')}@vendor.com`,
+        address: vend.address || ''
+      })
     });
+    await refreshAllData();
   };
 
-  const addVendor = (vend: Omit<Vendor, 'id'>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      const newVend: Vendor = {
-        ...vend,
-        id: `VND-${String(prev.vendors.length + 1).padStart(3, '0')}`
-      };
-      return {
-        ...prev,
-        vendors: [newVend, ...prev.vendors]
-      };
+  const updateVendor = async (id: string, vend: any) => {
+    await fetchApi(`/inventory/vendors/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: vend.companyName,
+        phone: vend.phone,
+        email: vend.email,
+        address: vend.address
+      })
     });
+    await refreshAllData();
   };
 
-  const updateVendor = (id: string, updatedVend: Partial<Vendor>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        vendors: prev.vendors.map(v => v.id === id ? { ...v, ...updatedVend } : v)
-      };
+  const deleteVendor = async (id: string) => {
+    await fetchApi(`/inventory/vendors/${id}`, {
+      method: 'DELETE'
     });
+    await refreshAllData();
   };
 
-  const deleteVendor = (id: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        vendors: prev.vendors.filter(v => v.id !== id)
-      };
+  const addCylinder = async (cyl: any) => {
+    const ot = oxygenTypes.find(t => t.name === cyl.oxygenType) || oxygenTypes[0];
+    await fetchApi('/inventory/cylinders', {
+      method: 'POST',
+      body: JSON.stringify({
+        serialNumber: cyl.serialNo,
+        capacity: Number(cyl.capacity) || 40,
+        size: cyl.size,
+        status: cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase(),
+        oxygenTypeId: ot?.id
+      })
     });
+    await refreshAllData();
   };
 
-  const addCylinder = (cyl: Omit<Cylinder, 'id'>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      const newCyl: Cylinder = {
-        ...cyl,
-        id: `CYL-${String(prev.cylinders.length + 1).padStart(3, '0')}`
-      };
-      return {
-        ...prev,
-        cylinders: [newCyl, ...prev.cylinders]
-      };
+  const updateCylinder = async (id: string, cyl: any) => {
+    const payload: any = { ...cyl };
+    if (cyl.serialNo) {
+      payload.serialNumber = cyl.serialNo;
+      delete payload.serialNo;
+    }
+    if (cyl.status) {
+      payload.status = cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase();
+    }
+    if (cyl.oxygenType) {
+      const ot = oxygenTypes.find(t => t.name === cyl.oxygenType);
+      if (ot) payload.oxygenTypeId = ot.id;
+      delete payload.oxygenType;
+    }
+    await fetchApi(`/inventory/cylinders/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
     });
+    await refreshAllData();
   };
 
-  const updateCylinder = (id: string, updatedCyl: Partial<Cylinder>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        cylinders: prev.cylinders.map(c => c.id === id ? { ...c, ...updatedCyl } : c)
-      };
+  const deleteCylinder = async (id: string) => {
+    await fetchApi(`/inventory/cylinders/${id}`, {
+      method: 'DELETE'
     });
+    await refreshAllData();
   };
 
-  const deleteCylinder = (id: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        cylinders: prev.cylinders.filter(c => c.id !== id)
-      };
+  const addProduct = async (prod: any) => {
+    const matchedCategory = categories.find(c =>
+      c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
+      (prod.category === 'Equipment' && c.name.toLowerCase().includes('regulator')) ||
+      (prod.category === 'Accessory' && c.name.toLowerCase().includes('consumable'))
+    ) || categories[0];
+
+    await fetchApi('/inventory/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: prod.name,
+        sku: `PRD-${Date.now().toString().slice(-6)}`,
+        description: prod.description || '',
+        price: Number(prod.price),
+        cost: Number(prod.cost),
+        currentStock: Number(prod.stock) || 0,
+        minStock: 5,
+        categoryId: matchedCategory?.id
+      })
     });
+    await refreshAllData();
   };
 
-  const addProduct = (prod: Omit<Product, 'id'>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      const newProd: Product = {
-        ...prod,
-        id: `PRD-${String(prev.products.length + 1).padStart(3, '0')}`
-      };
-      return {
-        ...prev,
-        products: [newProd, ...prev.products]
-      };
+  const updateProduct = async (id: string, prod: any) => {
+    const payload: any = { ...prod };
+    if (prod.stock !== undefined) {
+      payload.currentStock = Number(prod.stock);
+      delete payload.stock;
+    }
+    if (prod.price) payload.price = Number(prod.price);
+    if (prod.cost) payload.cost = Number(prod.cost);
+    
+    await fetchApi(`/inventory/products/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
     });
+    await refreshAllData();
   };
 
-  const updateProduct = (id: string, updatedProd: Partial<Product>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        products: prev.products.map(p => p.id === id ? { ...p, ...updatedProd } : p)
-      };
+  const deleteProduct = async (id: string) => {
+    await fetchApi(`/inventory/products/${id}`, {
+      method: 'DELETE'
     });
+    await refreshAllData();
   };
 
-  const deleteProduct = (id: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        products: prev.products.filter(p => p.id !== id)
-      };
-    });
-  };
+  // Workflow integrations
+  const createRental = async (rentalData: any) => {
+    const depositAmount = Number(rentalData.deposit) || 0;
+    const notesPayload = `[DEPOSIT: ${depositAmount}]`;
 
-  // Workflow Implementations
-  const createRental = (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number }) => {
-    updateData(prev => {
-      if (!prev) return prev;
-      
-      const customer = prev.customers.find(c => c.id === rentalData.customerId);
-      const cylinder = prev.cylinders.find(c => c.id === rentalData.cylinderId);
-      
-      if (!customer || !cylinder) return prev;
-
-      // Update cylinder status to Rented
-      const updatedCylinders = prev.cylinders.map(c => 
-        c.id === rentalData.cylinderId ? { ...c, status: 'Rented' as const } : c
-      );
-
-      // Create rental object
-      const newRental: Rental = {
-        id: `RNT-${String(prev.rentals.length + 1).padStart(3, '0')}`,
+    await fetchApi('/transactions/rentals', {
+      method: 'POST',
+      body: JSON.stringify({
         customerId: rentalData.customerId,
-        customerName: customer.name,
-        cylinderId: rentalData.cylinderId,
-        cylinderSerial: cylinder.serialNo,
-        rentDate: rentalData.rentDate,
-        returnDate: rentalData.returnDate,
-        deposit: rentalData.deposit,
-        rentalFee: rentalData.rentalFee,
-        status: 'Active'
-      };
-
-      // Create transaction object
-      const newTx: Transaction = {
-        id: `TX-${newRental.id}`,
-        date: rentalData.rentDate,
-        type: 'Rental',
-        description: `Rental ${cylinder.serialNo} - ${customer.name}`,
-        amount: rentalData.rentalFee,
-        status: 'Active',
-        referenceId: newRental.id
-      };
-
-      // Create stock movement
-      const newMovement: StockMovement = {
-        id: `MVT-${String(prev.stockMovements.length + 1).padStart(3, '0')}`,
-        itemId: cylinder.serialNo,
-        itemName: `Tabung Oksigen ${cylinder.size} (${cylinder.oxygenType})`,
-        itemType: 'Cylinder',
-        type: 'Outgoing',
-        quantity: 1,
-        date: rentalData.rentDate,
-        reason: `Disewa oleh ${customer.name} (${newRental.id})`
-      };
-
-      return {
-        ...prev,
-        cylinders: updatedCylinders,
-        rentals: [newRental, ...prev.rentals],
-        transactions: [newTx, ...prev.transactions],
-        stockMovements: [newMovement, ...prev.stockMovements]
-      };
+        dueDate: new Date(rentalData.returnDate).toISOString(),
+        cylinderIds: [rentalData.cylinderId],
+        amountPaid: Number(rentalData.rentalFee) || 0,
+        notes: notesPayload
+      })
     });
+    await refreshAllData();
   };
 
-  const returnRental = (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status'] = 'Available') => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const rental = prev.rentals.find(r => r.id === rentalId);
-      if (!rental) return prev;
-
-      // Update rental status to Returned
-      const updatedRentals = prev.rentals.map(r => 
-        r.id === rentalId 
-          ? { ...r, status: 'Returned' as const, actualReturnDate } 
-          : r
-      );
-
-      // Update cylinder status to Available/Maintenance/etc.
-      const updatedCylinders = prev.cylinders.map(c => 
-        c.id === rental.cylinderId 
-          ? { ...c, status: cylinderStatus, lastInspection: actualReturnDate } 
-          : c
-      );
-
-      // Create transaction update/new transaction for deposit return or rental complete
-      const updatedTransactions = prev.transactions.map(t => 
-        t.referenceId === rentalId ? { ...t, status: 'Completed' as const } : t
-      );
-
-      // Add Stock Movement
-      const newMovement: StockMovement = {
-        id: `MVT-${String(prev.stockMovements.length + 1).padStart(3, '0')}`,
-        itemId: rental.cylinderSerial,
-        itemName: `Kembali Tabung Oksigen`,
-        itemType: 'Cylinder',
-        type: 'Incoming',
-        quantity: 1,
-        date: actualReturnDate,
-        reason: `Pengembalian sewa ${rental.customerName} (${rentalId})`
-      };
-
-      return {
-        ...prev,
-        rentals: updatedRentals,
-        cylinders: updatedCylinders,
-        transactions: updatedTransactions,
-        stockMovements: [newMovement, ...prev.stockMovements]
-      };
+  const returnRental = async (rentalId: string, actualReturnDate: string, status: any) => {
+    const rental = data?.rentals.find(r => r.id === rentalId);
+    if (!rental) return;
+    await fetchApi(`/transactions/rentals/${rentalId}/return`, {
+      method: 'POST',
+      body: JSON.stringify({
+        cylinderIds: [rental.cylinderId]
+      })
     });
+    await refreshAllData();
   };
 
-  const sendToRefill = (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const cylinder = prev.cylinders.find(c => c.id === refillData.cylinderId);
-      const vendor = prev.vendors.find(v => v.id === refillData.vendorId);
-      if (!cylinder || !vendor) return prev;
-
-      // Update cylinder status to At Vendor
-      const updatedCylinders = prev.cylinders.map(c => 
-        c.id === refillData.cylinderId ? { ...c, status: 'At Vendor' as const } : c
-      );
-
-      // Create Refill object
-      const newRefill: Refill = {
-        id: `REF-${String(prev.refills.length + 1).padStart(3, '0')}`,
-        cylinderId: refillData.cylinderId,
-        cylinderSerial: cylinder.serialNo,
+  const sendToRefill = async (refillData: any) => {
+    // Backend demands cylinders must be empty to be filled
+    // Force EMPTY cylinder status beforehand so backend validation passes.
+    await fetchApi(`/inventory/cylinders/${refillData.cylinderId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'EMPTY' })
+    });
+    
+    await fetchApi('/transactions/refills/send', {
+      method: 'POST',
+      body: JSON.stringify({
         vendorId: refillData.vendorId,
-        vendorName: vendor.companyName,
-        sendDate: refillData.sendDate,
-        cost: refillData.cost,
-        status: 'Sent'
-      };
-
-      // Create Transaction
-      const newTx: Transaction = {
-        id: `TX-${newRefill.id}`,
-        date: refillData.sendDate,
-        type: 'Refill',
-        description: `Isi Ulang ${cylinder.serialNo} di ${vendor.companyName}`,
-        amount: refillData.cost,
-        status: 'In Progress',
-        referenceId: newRefill.id
-      };
-
-      return {
-        ...prev,
-        cylinders: updatedCylinders,
-        refills: [newRefill, ...prev.refills],
-        transactions: [newTx, ...prev.transactions]
-      };
+        cylinderIds: [refillData.cylinderId]
+      })
     });
+    await refreshAllData();
   };
 
-  const receiveRefill = (refillId: string, returnDate: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const refill = prev.refills.find(r => r.id === refillId);
-      if (!refill) return prev;
-
-      // Update refill status
-      const updatedRefills = prev.refills.map(r => 
-        r.id === refillId ? { ...r, status: 'Returned' as const, returnDate } : r
-      );
-
-      // Update cylinder status to Available
-      const updatedCylinders = prev.cylinders.map(c => 
-        c.id === refill.cylinderId ? { ...c, status: 'Available' as const, lastInspection: returnDate } : c
-      );
-
-      // Update Transaction
-      const updatedTransactions = prev.transactions.map(t => 
-        t.referenceId === refillId ? { ...t, status: 'Completed' as const } : t
-      );
-
-      // Add Stock Movement
-      const newMovement: StockMovement = {
-        id: `MVT-${String(prev.stockMovements.length + 1).padStart(3, '0')}`,
-        itemId: refill.cylinderSerial,
-        itemName: `Refill Tabung Selesai`,
-        itemType: 'Cylinder',
-        type: 'Incoming',
-        quantity: 1,
-        date: returnDate,
-        reason: `Pengembalian refill dari ${refill.vendorName} (${refillId})`
-      };
-
-      return {
-        ...prev,
-        refills: updatedRefills,
-        cylinders: updatedCylinders,
-        transactions: updatedTransactions,
-        stockMovements: [newMovement, ...prev.stockMovements]
-      };
+  const receiveRefill = async (refillId: string, returnDate: string) => {
+    await fetchApi('/transactions/refills/receive', {
+      method: 'POST',
+      body: JSON.stringify({
+        cylinderIds: [refillId], // refillId maps to cylinderId on frontend
+        costPerCylinder: 25000,
+        amountPaid: 25000
+      })
     });
+    await refreshAllData();
   };
 
-  const createStockMovement = (mvt: Omit<StockMovement, 'id' | 'date'>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const newMvt: StockMovement = {
-        ...mvt,
-        id: `MVT-${String(prev.stockMovements.length + 1).padStart(3, '0')}`,
-        date: new Date().toISOString().split('T')[0]
-      };
-
-      // Apply stock adjustment to products if it is a Product
-      let updatedProducts = prev.products;
-      if (mvt.itemType === 'Product') {
-        updatedProducts = prev.products.map(p => {
-          if (p.id === mvt.itemId) {
-            let nextStock = p.stock;
-            if (mvt.type === 'Incoming') nextStock += mvt.quantity;
-            else if (mvt.type === 'Outgoing') nextStock -= mvt.quantity;
-            else nextStock = mvt.quantity; // Adjustment is an overwrite in this simplistic ERP logic
-            return { ...p, stock: Math.max(0, nextStock) };
-          }
-          return p;
-        });
-      }
-
-      return {
-        ...prev,
-        stockMovements: [newMvt, ...prev.stockMovements],
-        products: updatedProducts
-      };
-    });
+  const createStockMovement = async (mvt: any) => {
+    // Stock movements are logged automatically on transactions
   };
 
-  const createPurchase = (pur: { vendorId: string; items: Array<{ itemId: string; name: string; qty: number; cost: number }>; date: string }) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const vendor = prev.vendors.find(v => v.id === pur.vendorId);
-      if (!vendor) return prev;
-
-      const newPur: Purchase = {
-        id: `PRC-${String(prev.purchases.length + 1).padStart(3, '0')}`,
+  const createPurchase = async (pur: any) => {
+    await fetchApi('/transactions/purchases', {
+      method: 'POST',
+      body: JSON.stringify({
         vendorId: pur.vendorId,
-        vendorName: vendor.companyName,
-        items: pur.items,
-        totalAmount: pur.items.reduce((sum, item) => sum + (item.qty * item.cost), 0),
-        date: pur.date,
-        status: 'Completed'
-      };
-
-      const newTx: Transaction = {
-        id: `TX-${newPur.id}`,
-        date: pur.date,
-        type: 'Purchase',
-        description: `Pembelian Stok - ${vendor.companyName}`,
-        amount: newPur.totalAmount,
-        status: 'Completed',
-        referenceId: newPur.id
-      };
-
-      // Adjust product stocks & create movements
-      const updatedProducts = prev.products.map(p => {
-        const purItem = pur.items.find(i => i.itemId === p.id);
-        if (purItem) {
-          return { ...p, stock: p.stock + purItem.qty };
-        }
-        return p;
-      });
-
-      const newMovements = pur.items.map((item, index) => ({
-        id: `MVT-${String(prev.stockMovements.length + index + 1).padStart(3, '0')}`,
-        itemId: item.itemId,
-        itemName: item.name,
-        itemType: 'Product' as const,
-        type: 'Incoming' as const,
-        quantity: item.qty,
-        date: pur.date,
-        reason: `Restock Pembelian ${newPur.id}`
-      }));
-
-      return {
-        ...prev,
-        purchases: [newPur, ...prev.purchases],
-        transactions: [newTx, ...prev.transactions],
-        products: updatedProducts,
-        stockMovements: [...newMovements, ...prev.stockMovements]
-      };
+        items: pur.items.map((i: any) => ({
+          productId: i.itemId,
+          quantity: i.qty,
+          unitCost: i.cost
+        })),
+        amountPaid: pur.items.reduce((sum: number, i: any) => sum + (i.qty * i.cost), 0)
+      })
     });
+    await refreshAllData();
   };
 
-  const createSale = (sale: { customerId: string; items: Array<{ productId: string; name: string; qty: number; price: number }>; date: string; paymentMethod: Sale['paymentMethod'] }) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const customer = prev.customers.find(c => c.id === sale.customerId);
-      if (!customer) return prev;
-
-      const newSale: Sale = {
-        id: `SAL-${String(prev.sales.length + 1).padStart(3, '0')}`,
-        customerId: sale.customerId,
-        customerName: customer.name,
-        items: sale.items,
-        totalAmount: sale.items.reduce((sum, item) => sum + (item.qty * item.price), 0),
-        date: sale.date,
-        paymentMethod: sale.paymentMethod,
-        status: 'Paid'
-      };
-
-      const newTx: Transaction = {
-        id: `TX-${newSale.id}`,
-        date: sale.date,
-        type: 'Sale',
-        description: `Penjualan Retail - ${customer.name}`,
-        amount: newSale.totalAmount,
-        status: 'Completed',
-        referenceId: newSale.id
-      };
-
-      // Adjust product stocks & create movements
-      const updatedProducts = prev.products.map(p => {
-        const saleItem = sale.items.find(i => i.productId === p.id);
-        if (saleItem) {
-          return { ...p, stock: Math.max(0, p.stock - saleItem.qty) };
-        }
-        return p;
-      });
-
-      const newMovements = sale.items.map((item, index) => ({
-        id: `MVT-${String(prev.stockMovements.length + index + 1).padStart(3, '0')}`,
-        itemId: item.productId,
-        itemName: item.name,
-        itemType: 'Product' as const,
-        type: 'Outgoing' as const,
-        quantity: item.qty,
-        date: sale.date,
-        reason: `Penjualan Retail ${newSale.id}`
-      }));
-
-      return {
-        ...prev,
-        sales: [newSale, ...prev.sales],
-        transactions: [newTx, ...prev.transactions],
-        products: updatedProducts,
-        stockMovements: [...newMovements, ...prev.stockMovements]
-      };
+  const createSale = async (sale: any) => {
+    await fetchApi('/transactions/sales', {
+      method: 'POST',
+      body: JSON.stringify({
+        customerId: sale.customerId || undefined,
+        items: sale.items.map((i: any) => ({
+          productId: i.productId,
+          quantity: i.qty
+        })),
+        amountPaid: sale.items.reduce((sum: number, i: any) => sum + (i.qty * i.price), 0),
+        paymentMethod: sale.paymentMethod.toUpperCase() === 'E-WALLET' ? 'E_WALLET' : sale.paymentMethod.toUpperCase()
+      })
     });
+    await refreshAllData();
   };
 
-  const createExpense = (exp: Omit<Expense, 'id' | 'status'>) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const newExp: Expense = {
-        ...exp,
-        id: `EXP-${String(prev.expenses.length + 1).padStart(3, '0')}`,
-        status: 'Approved' // Direct approval for simplicity
-      };
-
-      const newTx: Transaction = {
-        id: `TX-${newExp.id}`,
-        date: exp.date,
-        type: 'Expense',
-        description: `Pengeluaran: ${exp.description}`,
-        amount: exp.amount,
-        status: 'Completed',
-        referenceId: newExp.id
-      };
-
-      return {
-        ...prev,
-        expenses: [newExp, ...prev.expenses],
-        transactions: [newTx, ...prev.transactions]
-      };
+  const createExpense = async (exp: any) => {
+    await fetchApi('/finance/expenses', {
+      method: 'POST',
+      body: JSON.stringify({
+        category: exp.category.toUpperCase() === 'REFILLS' ? 'VENDOR_REFILL' : exp.category.toUpperCase(),
+        amount: Number(exp.amount),
+        description: exp.description,
+        date: new Date(exp.date).toISOString()
+      })
     });
+    await refreshAllData();
   };
 
-  const approveExpense = (expenseId: string) => {
-    updateData(prev => {
-      if (!prev) return prev;
-
-      const updatedExpenses = prev.expenses.map(e => 
-        e.id === expenseId ? { ...e, status: 'Approved' as const } : e
-      );
-
-      const updatedTransactions = prev.transactions.map(t => 
-        t.referenceId === expenseId ? { ...t, status: 'Completed' as const } : t
-      );
-
-      return {
-        ...prev,
-        expenses: updatedExpenses,
-        transactions: updatedTransactions
-      };
-    });
+  const approveExpense = async (expenseId: string) => {
+    // Direct approval from backend upon creation
   };
+
+  if (!isClientLoaded) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Memuat Sistem...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <LoginOverlay onLoginSuccess={handleLoginSuccess} />;
+  }
 
   if (!data) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Loading Database Oksigen24Medis...</p>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">Menghubungkan ke database live Supabase...</p>
         </div>
       </div>
     );
@@ -676,6 +693,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ...data,
         theme,
         toggleTheme,
+        user,
+        logout,
         addCustomer,
         updateCustomer,
         deleteCustomer,

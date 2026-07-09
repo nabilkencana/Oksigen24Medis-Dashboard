@@ -49,7 +49,7 @@ interface SidebarGroup {
 export default function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme, customers, vendors, cylinders, products, expenses } = useData();
+  const { theme, toggleTheme, customers, vendors, cylinders, products, expenses, user, logout } = useData();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -353,7 +353,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 className="flex items-center gap-1.5 cursor-pointer"
               >
                 <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase border border-emerald-500/20">
-                  AD
+                  {user?.fullName ? user.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
                 </div>
               </button>
 
@@ -366,8 +366,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl p-1 z-50"
                   >
                     <div className="px-3 py-2 border-b border-border/60">
-                      <p className="text-xs font-bold truncate">Nabil Kencana</p>
-                      <p className="text-[10px] text-muted-foreground truncate">nabil@oksigen24.com</p>
+                      <p className="text-xs font-bold truncate">{user?.fullName || 'Nabil Kencana'}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{user?.email || 'nabil@oksigen24.com'}</p>
                     </div>
                     <div className="py-1">
                       <button
@@ -395,7 +395,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                       <button
                         onClick={() => {
                           setIsProfileOpen(false);
-                          alert('Logout dari Oksigen24Medis ERP Dashboard.');
+                          logout();
                         }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-rose-500 hover:bg-rose-500/10 rounded-lg cursor-pointer"
                       >

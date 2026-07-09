@@ -39,7 +39,8 @@ export default function Home() {
     createRental,
     sendToRefill,
     createSale,
-    createExpense
+    createExpense,
+    user
   } = useData();
 
   // Drawer states
@@ -47,6 +48,7 @@ export default function Home() {
 
   // Form states
   const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+  const [isSaving, setIsSaving] = useState(false);
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const });
   const [expenseForm, setExpenseForm] = useState({ category: 'Operational' as const, description: '', amount: '', date: '' });
@@ -107,41 +109,55 @@ export default function Home() {
   ];
 
   // Quick Action form submissions
-  const handleRentalSubmit = (e: React.FormEvent) => {
+  const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rentalForm.customerId || !rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    createRental({
-      customerId: rentalForm.customerId,
-      cylinderId: rentalForm.cylinderId,
-      rentDate: rentalForm.rentDate,
-      returnDate: rentalForm.returnDate,
-      deposit: Number(rentalForm.deposit) || 0,
-      rentalFee: Number(rentalForm.rentalFee) || 0
-    });
-    setActiveDrawer(null);
-    setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+    setIsSaving(true);
+    try {
+      await createRental({
+        customerId: rentalForm.customerId,
+        cylinderId: rentalForm.cylinderId,
+        rentDate: rentalForm.rentDate,
+        returnDate: rentalForm.returnDate,
+        deposit: Number(rentalForm.deposit) || 0,
+        rentalFee: Number(rentalForm.rentalFee) || 0
+      });
+      setActiveDrawer(null);
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal membuat sewa.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleRefillSubmit = (e: React.FormEvent) => {
+  const handleRefillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refillForm.cylinderId || !refillForm.vendorId || !refillForm.sendDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    sendToRefill({
-      cylinderId: refillForm.cylinderId,
-      vendorId: refillForm.vendorId,
-      cost: Number(refillForm.cost) || 0,
-      sendDate: refillForm.sendDate
-    });
-    setActiveDrawer(null);
-    setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+    setIsSaving(true);
+    try {
+      await sendToRefill({
+        cylinderId: refillForm.cylinderId,
+        vendorId: refillForm.vendorId,
+        cost: Number(refillForm.cost) || 0,
+        sendDate: refillForm.sendDate
+      });
+      setActiveDrawer(null);
+      setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengirim refill.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaleSubmit = (e: React.FormEvent) => {
+  const handleSaleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!saleForm.customerId || !saleForm.productId) {
       alert('Harap isi semua kolom wajib.');
@@ -150,35 +166,49 @@ export default function Home() {
     const product = products.find(p => p.id === saleForm.productId);
     if (!product) return;
 
-    createSale({
-      customerId: saleForm.customerId,
-      items: [{
-        productId: saleForm.productId,
-        name: product.name,
-        qty: Number(saleForm.qty),
-        price: product.price
-      }],
-      date: new Date().toISOString().split('T')[0],
-      paymentMethod: saleForm.paymentMethod
-    });
-    setActiveDrawer(null);
-    setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' });
+    setIsSaving(true);
+    try {
+      await createSale({
+        customerId: saleForm.customerId,
+        items: [{
+          productId: saleForm.productId,
+          name: product.name,
+          qty: Number(saleForm.qty),
+          price: product.price
+        }],
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: saleForm.paymentMethod
+      });
+      setActiveDrawer(null);
+      setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan penjualan.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleExpenseSubmit = (e: React.FormEvent) => {
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!expenseForm.description || !expenseForm.amount || !expenseForm.date) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    createExpense({
-      category: expenseForm.category,
-      description: expenseForm.description,
-      amount: Number(expenseForm.amount),
-      date: expenseForm.date
-    });
-    setActiveDrawer(null);
-    setExpenseForm({ category: 'Operational', description: '', amount: '', date: '' });
+    setIsSaving(true);
+    try {
+      await createExpense({
+        category: expenseForm.category,
+        description: expenseForm.description,
+        amount: Number(expenseForm.amount),
+        date: expenseForm.date
+      });
+      setActiveDrawer(null);
+      setExpenseForm({ category: 'Operational', description: '', amount: '', date: '' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan pengeluaran.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -188,7 +218,7 @@ export default function Home() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-card border border-border rounded-xl shadow-xs">
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-            {getGreeting()}, Admin <span className="animate-wave origin-[70%_70%] inline-block">👋</span>
+            {getGreeting()}, {user?.fullName ? user.fullName.split(' ')[0] : 'Admin'} <span className="animate-wave origin-[70%_70%] inline-block">👋</span>
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             Berikut ringkasan operasional logistik dan sewa tabung oksigen hari ini.
@@ -445,23 +475,32 @@ export default function Home() {
             <Input
               label="Uang Jaminan (Deposit) (Rp)"
               id="rentDeposit"
-              type="number"
-              placeholder="e.g. 200000"
+              isRupiah={true}
+              placeholder="e.g. 200.000"
               value={rentalForm.deposit}
               onChange={e => setRentalForm({ ...rentalForm, deposit: e.target.value })}
             />
             <Input
               label="Biaya Sewa (Rp) *"
               id="rentFee"
-              type="number"
-              placeholder="e.g. 50000"
+              isRupiah={true}
+              placeholder="e.g. 50.000"
               value={rentalForm.rentalFee}
               onChange={e => setRentalForm({ ...rentalForm, rentalFee: e.target.value })}
             />
           </div>
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)}>Batal</Button>
-            <Button type="submit" variant="success" className="flex-1">Buat Sewa</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" variant="success" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Buat Sewa'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -492,8 +531,8 @@ export default function Home() {
           <Input
             label="Biaya Refill Oksigen (Rp) *"
             id="refillCost"
-            type="number"
-            placeholder="e.g. 80000"
+            isRupiah={true}
+            placeholder="e.g. 80.000"
             value={refillForm.cost}
             onChange={e => setRefillForm({ ...refillForm, cost: e.target.value })}
           />
@@ -505,8 +544,17 @@ export default function Home() {
             onChange={e => setRefillForm({ ...refillForm, sendDate: e.target.value })}
           />
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)}>Batal</Button>
-            <Button type="submit" className="flex-1">Kirim Tabung</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Kirim Refill'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -556,8 +604,17 @@ export default function Home() {
             />
           </div>
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)}>Batal</Button>
-            <Button type="submit" variant="success" className="flex-1">Simpan Penjualan</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" variant="success" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Simpan Penjualan'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -590,8 +647,8 @@ export default function Home() {
             <Input
               label="Total Nominal (Rp) *"
               id="expAmt"
-              type="number"
-              placeholder="e.g. 150000"
+              isRupiah={true}
+              placeholder="e.g. 150.000"
               value={expenseForm.amount}
               onChange={e => setExpenseForm({ ...expenseForm, amount: e.target.value })}
             />
@@ -604,8 +661,17 @@ export default function Home() {
             />
           </div>
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)}>Batal</Button>
-            <Button type="submit" variant="destructive" className="flex-1">Catat Kas Keluar</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setActiveDrawer(null)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" variant="destructive" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Catat Kas Keluar'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>

@@ -71,6 +71,7 @@ export default function TransactionsPage() {
 
   // Form states
   const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+  const [isSaving, setIsSaving] = useState(false);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   
@@ -159,22 +160,29 @@ export default function TransactionsPage() {
     return posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   }, [posCart]);
 
-  const handleCheckoutPOS = () => {
+  const handleCheckoutPOS = async () => {
     if (!posCustomer || posCart.length === 0) {
       alert('Harap pilih pelanggan dan tambahkan produk ke keranjang.');
       return;
     }
 
-    const sale = createSale({
-      customerId: posCustomer,
-      items: posCart,
-      date: new Date().toISOString().split('T')[0],
-      paymentMethod: posPaymentMethod
-    });
+    setIsSaving(true);
+    try {
+      const sale = await createSale({
+        customerId: posCustomer,
+        items: posCart,
+        date: new Date().toISOString().split('T')[0],
+        paymentMethod: posPaymentMethod
+      });
 
-    setCompletedSaleInvoice(sale);
-    setPosCart([]);
-    setPosCustomer('');
+      setCompletedSaleInvoice(sale);
+      setPosCart([]);
+      setPosCustomer('');
+    } catch (err: any) {
+      alert(err.message || 'Gagal memproses transaksi.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // -------------------------------------------------------------
@@ -210,70 +218,98 @@ export default function TransactionsPage() {
     return restockCart.reduce((sum, item) => sum + (item.cost * item.qty), 0);
   }, [restockCart]);
 
-  const handleCheckoutRestock = () => {
+  const handleCheckoutRestock = async () => {
     if (!restockVendor || restockCart.length === 0) {
       alert('Harap pilih supplier dan tambahkan produk ke keranjang.');
       return;
     }
 
-    createPurchase({
-      vendorId: restockVendor,
-      items: restockCart,
-      date: new Date().toISOString().split('T')[0]
-    });
+    setIsSaving(true);
+    try {
+      await createPurchase({
+        vendorId: restockVendor,
+        items: restockCart,
+        date: new Date().toISOString().split('T')[0]
+      });
 
-    alert('Transaksi restock pengadaan berhasil disimpan dan stok gudang terupdate!');
-    setRestockCart([]);
-    setRestockVendor('');
-    setIsRestockDrawerOpen(false);
+      alert('Transaksi restock pengadaan berhasil disimpan!');
+      setRestockCart([]);
+      setRestockVendor('');
+      setIsRestockDrawerOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Gagal memproses transaksi.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // -------------------------------------------------------------
   // FORM HANDLERS
   // -------------------------------------------------------------
-  const handleRentalSubmit = (e: React.FormEvent) => {
+  const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rentalForm.customerId || !rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    createRental({
-      customerId: rentalForm.customerId,
-      cylinderId: rentalForm.cylinderId,
-      rentDate: rentalForm.rentDate,
-      returnDate: rentalForm.returnDate,
-      deposit: Number(rentalForm.deposit) || 0,
-      rentalFee: Number(rentalForm.rentalFee) || 0
-    });
-    setIsRentalDrawerOpen(false);
-    setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+    setIsSaving(true);
+    try {
+      await createRental({
+        customerId: rentalForm.customerId,
+        cylinderId: rentalForm.cylinderId,
+        rentDate: rentalForm.rentDate,
+        returnDate: rentalForm.returnDate,
+        deposit: Number(rentalForm.deposit) || 0,
+        rentalFee: Number(rentalForm.rentalFee) || 0
+      });
+      setIsRentalDrawerOpen(false);
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal membuat sewa.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleReturnSubmit = (e: React.FormEvent) => {
+  const handleReturnSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!returnForm.rentalId || !returnForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    returnRental(returnForm.rentalId, returnForm.returnDate, returnForm.condition);
-    setIsReturnDrawerOpen(false);
-    setReturnForm({ rentalId: '', returnDate: '', condition: 'Available' });
+    setIsSaving(true);
+    try {
+      await returnRental(returnForm.rentalId, returnForm.returnDate, returnForm.condition);
+      setIsReturnDrawerOpen(false);
+      setReturnForm({ rentalId: '', returnDate: '', condition: 'Available' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal memproses pengembalian sewa.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleRefillSubmit = (e: React.FormEvent) => {
+  const handleRefillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!refillForm.cylinderId || !refillForm.vendorId || !refillForm.sendDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
-    sendToRefill({
-      cylinderId: refillForm.cylinderId,
-      vendorId: refillForm.vendorId,
-      cost: Number(refillForm.cost) || 0,
-      sendDate: refillForm.sendDate
-    });
-    setIsRefillDrawerOpen(false);
-    setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+    setIsSaving(true);
+    try {
+      await sendToRefill({
+        cylinderId: refillForm.cylinderId,
+        vendorId: refillForm.vendorId,
+        cost: Number(refillForm.cost) || 0,
+        sendDate: refillForm.sendDate
+      });
+      setIsRefillDrawerOpen(false);
+      setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengirim refill.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Filter cylinders for refills (need available empty cylinders or maintenance ones)
@@ -659,10 +695,19 @@ export default function TransactionsPage() {
 
                 <Button
                   className="w-full mt-4 flex items-center justify-center gap-1.5"
-                  disabled={posCart.length === 0 || !posCustomer}
+                  disabled={posCart.length === 0 || !posCustomer || isSaving}
                   onClick={handleCheckoutPOS}
                 >
-                  <ShoppingCart className="w-4 h-4" /> Bayar & Cetak Struk
+                  {isSaving ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Memproses...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4" /> Bayar & Cetak Struk
+                    </>
+                  )}
                 </Button>
 
                 {/* Print completed invoice */}
@@ -893,21 +938,30 @@ export default function TransactionsPage() {
             <Input
               label="Jaminan (Deposit) (Rp)"
               id="drawRentDep"
-              type="number"
+              isRupiah={true}
               value={rentalForm.deposit}
               onChange={e => setRentalForm({ ...rentalForm, deposit: e.target.value })}
             />
             <Input
               label="Tarif Sewa (Rp)"
               id="drawRentFee"
-              type="number"
+              isRupiah={true}
               value={rentalForm.rentalFee}
               onChange={e => setRentalForm({ ...rentalForm, rentalFee: e.target.value })}
             />
           </div>
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRentalDrawerOpen(false)}>Kembali</Button>
-            <Button type="submit" className="flex-1">Buat Sewa</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRentalDrawerOpen(false)} disabled={isSaving}>Kembali</Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Buat Sewa'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -949,8 +1003,17 @@ export default function TransactionsPage() {
             * Jaminan (deposit) sewa akan secara otomatis dikembalikan kepada saldo cash pelanggan saat pengembalian diproses.
           </p>
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsReturnDrawerOpen(false)}>Batal</Button>
-            <Button type="submit" className="flex-1 bg-success text-white">Log Kembali</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsReturnDrawerOpen(false)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1 bg-success text-white" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Log Kembali'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -981,7 +1044,7 @@ export default function TransactionsPage() {
           <Input
             label="Biaya Pengisian Oksigen (Rp)"
             id="drawRefCost"
-            type="number"
+            isRupiah={true}
             placeholder="e.g. 50000"
             value={refillForm.cost}
             onChange={e => setRefillForm({ ...refillForm, cost: e.target.value })}
@@ -994,8 +1057,17 @@ export default function TransactionsPage() {
             onChange={e => setRefillForm({ ...refillForm, sendDate: e.target.value })}
           />
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRefillDrawerOpen(false)}>Batal</Button>
-            <Button type="submit" className="flex-1 bg-blue-600 text-white">Kirim Refill</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRefillDrawerOpen(false)} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1 bg-blue-600 text-white" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Kirim Refill'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -1063,8 +1135,17 @@ export default function TransactionsPage() {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRestockDrawerOpen(false)}>Batal</Button>
-            <Button type="button" className="flex-1" disabled={restockCart.length === 0 || !restockVendor} onClick={handleCheckoutRestock}>Beli Restock</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setIsRestockDrawerOpen(false)} disabled={isSaving}>Batal</Button>
+            <Button type="button" className="flex-1" disabled={restockCart.length === 0 || !restockVendor || isSaving} onClick={handleCheckoutRestock}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Beli Restock'
+              )}
+            </Button>
           </div>
         </div>
       </Drawer>

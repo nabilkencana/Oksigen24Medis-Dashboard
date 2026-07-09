@@ -11,14 +11,45 @@ export function Label({ children, className = '', ...props }: React.LabelHTMLAtt
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  isRupiah?: boolean;
 }
 
-export function Input({ label, error, className = '', id, ...props }: InputProps) {
+export function Input({ label, error, className = '', id, isRupiah, onChange, value, ...props }: InputProps) {
+  const formatRp = (val: any) => {
+    if (val === undefined || val === null || val === '') return '';
+    // Strip everything except digits
+    const clean = String(val).replace(/\D/g, '');
+    // Format with dots as thousands separators
+    return clean.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  const displayValue = isRupiah ? formatRp(value) : value;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onChange) return;
+    if (isRupiah) {
+      const cleanVal = e.target.value.replace(/\D/g, '');
+      const newEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          value: cleanVal,
+        }
+      } as any;
+      onChange(newEvent);
+    } else {
+      onChange(e);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-1.5 w-full">
       {label && id && <Label htmlFor={id}>{label}</Label>}
       <input
         id={id}
+        type={isRupiah ? 'text' : props.type}
+        value={displayValue}
+        onChange={handleChange}
         className={`flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-border/60 ${className}`}
         {...props}
       />

@@ -710,14 +710,14 @@ export default function InventoryPage() {
             <Input
               label="Modal Beli (Rp)"
               id="prodCost"
-              type="number"
+              isRupiah={true}
               value={productForm.cost}
               onChange={e => setProductForm({ ...productForm, cost: e.target.value })}
             />
             <Input
               label="Harga Jual (Rp)"
               id="prodPrice"
-              type="number"
+              isRupiah={true}
               value={productForm.price}
               onChange={e => setProductForm({ ...productForm, price: e.target.value })}
             />

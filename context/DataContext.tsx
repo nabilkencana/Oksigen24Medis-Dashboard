@@ -321,11 +321,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
           desc = desc.replace('Payment for sales invoice ', 'Pembayaran invoice penjualan ');
         }
 
+        let payMethod = 'Cash';
+        if (inc.referenceType === 'SALE' && inc.referenceId) {
+          const sale = mappedSales.find(s => s.id === inc.referenceId);
+          if (sale) {
+            payMethod = sale.paymentMethod;
+          }
+        }
+
         return {
           id: `inc-${inc.id}`,
           date: new Date(inc.date).toISOString().split('T')[0],
           type: inc.referenceType === 'SALE' ? ('Sale' as const) : ('Rental' as const),
           description: desc,
+          paymentMethod: payMethod,
           amount: Number(inc.amount) || 0,
           status: 'Completed' as const,
           referenceId: inc.referenceId || inc.id

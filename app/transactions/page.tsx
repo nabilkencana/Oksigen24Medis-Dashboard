@@ -318,6 +318,69 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          aside, header, .no-print, [role="button"], button, .bg-black {
+            display: none !important;
+          }
+          html, body, #__next, .flex.h-screen, .flex-1.flex.flex-col, main, .space-y-6 {
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+            position: static !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          html, body {
+            background-color: white !important;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .fixed.inset-y-0.right-0 {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            min-height: 100vh !important;
+            background: white !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 20px !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            z-index: 9999999 !important;
+          }
+          .fixed.inset-y-0.right-0 > div:first-child {
+            display: none !important;
+          }
+          .fixed.inset-y-0.right-0 > div:last-child {
+            overflow: visible !important;
+            padding: 0 !important;
+            width: 100% !important;
+            display: flex !important;
+            justify-content: center !important;
+          }
+          .printable-invoice-card {
+            width: 100% !important;
+            max-width: 580px !important;
+            background: white !important;
+            border: 1px solid #e4e4e7 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05) !important;
+            padding: 24px !important;
+            margin: 20px auto !important;
+          }
+        }
+      `}} />
+
+      <div className="space-y-6 no-print">
       
       {/* Tab Navigation header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -890,6 +953,7 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
       )}
+      </div>
 
       {/* ----------------------------------------------------------------- */}
       {/* DRAWERS & MODALS FOR ACTIVE FORMS */}
@@ -1153,7 +1217,7 @@ export default function TransactionsPage() {
       {/* 5. INVOICE PREVIEW MODAL */}
       {isPrintOpen && selectedRental && (
         <Drawer isOpen={isPrintOpen} onClose={() => setIsPrintOpen(false)} title="Invoice Persewaan">
-          <div className="p-4 bg-white text-zinc-900 font-sans border rounded-xl shadow-xs text-xs space-y-4">
+          <div className="printable-invoice-card p-4 bg-white text-zinc-900 font-sans border rounded-xl shadow-xs text-xs space-y-4">
             
             {/* Header */}
             <div className="flex justify-between items-start border-b pb-4">

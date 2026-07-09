@@ -476,19 +476,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCylinder = async (id: string, cyl: any) => {
-    const payload: any = { ...cyl };
-    if (cyl.serialNo) {
-      payload.serialNumber = cyl.serialNo;
-      delete payload.serialNo;
-    }
-    if (cyl.status) {
+    const ot = oxygenTypes.find(t => t.name === cyl.oxygenType);
+    const payload: any = {};
+    
+    if (cyl.serialNo !== undefined) payload.serialNumber = cyl.serialNo;
+    if (cyl.size !== undefined) payload.size = cyl.size;
+    if (cyl.status !== undefined) {
       payload.status = cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase();
     }
-    if (cyl.oxygenType) {
-      const ot = oxygenTypes.find(t => t.name === cyl.oxygenType);
-      if (ot) payload.oxygenTypeId = ot.id;
-      delete payload.oxygenType;
-    }
+    if (ot) payload.oxygenTypeId = ot.id;
+    if (cyl.capacity !== undefined) payload.capacity = Number(cyl.capacity);
+
     await fetchApi(`/inventory/cylinders/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload)

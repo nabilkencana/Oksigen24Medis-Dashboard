@@ -71,6 +71,7 @@ export default function InventoryPage() {
 
   // Edit target states
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form states
   const [cylinderForm, setCylinderForm] = useState<{
@@ -196,20 +197,27 @@ export default function InventoryPage() {
   // -------------------------------------------------------------
   // FORM SUBMISSION HANDLERS
   // -------------------------------------------------------------
-  const handleCylinderSubmit = (e: React.FormEvent) => {
+  const handleCylinderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cylinderForm.serialNo) return;
 
-    if (editingId) {
-      updateCylinder(editingId, cylinderForm);
-    } else {
-      addCylinder(cylinderForm);
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        await updateCylinder(editingId, cylinderForm);
+      } else {
+        await addCylinder(cylinderForm);
+      }
+      setIsCylinderDrawerOpen(false);
+      resetForms();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan data tabung.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsCylinderDrawerOpen(false);
-    resetForms();
   };
 
-  const handleProductSubmit = (e: React.FormEvent) => {
+  const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productForm.name) return;
 
@@ -222,39 +230,60 @@ export default function InventoryPage() {
       description: productForm.description
     };
 
-    if (editingId) {
-      updateProduct(editingId, formatted);
-    } else {
-      addProduct(formatted);
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        await updateProduct(editingId, formatted);
+      } else {
+        await addProduct(formatted);
+      }
+      setIsProductDrawerOpen(false);
+      resetForms();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan data produk.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsProductDrawerOpen(false);
-    resetForms();
   };
 
-  const handleCustomerSubmit = (e: React.FormEvent) => {
+  const handleCustomerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerForm.name || !customerForm.phone) return;
 
-    if (editingId) {
-      updateCustomer(editingId, customerForm);
-    } else {
-      addCustomer(customerForm);
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        await updateCustomer(editingId, customerForm);
+      } else {
+        await addCustomer(customerForm);
+      }
+      setIsCustomerDrawerOpen(false);
+      resetForms();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan data pelanggan.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsCustomerDrawerOpen(false);
-    resetForms();
   };
 
-  const handleVendorSubmit = (e: React.FormEvent) => {
+  const handleVendorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorForm.companyName || !vendorForm.name) return;
 
-    if (editingId) {
-      updateVendor(editingId, vendorForm);
-    } else {
-      addVendor(vendorForm);
+    setIsSaving(true);
+    try {
+      if (editingId) {
+        await updateVendor(editingId, vendorForm);
+      } else {
+        await addVendor(vendorForm);
+      }
+      setIsVendorDrawerOpen(false);
+      resetForms();
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyimpan data vendor.');
+    } finally {
+      setIsSaving(false);
     }
-    setIsVendorDrawerOpen(false);
-    resetForms();
   };
 
   // -------------------------------------------------------------
@@ -672,8 +701,17 @@ export default function InventoryPage() {
             />
           )}
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsCylinderDrawerOpen(false); resetForms(); }}>Batal</Button>
-            <Button type="submit" className="flex-1">Simpan Tabung</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsCylinderDrawerOpen(false); resetForms(); }} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Simpan Tabung'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -731,8 +769,17 @@ export default function InventoryPage() {
           />
 
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsProductDrawerOpen(false); resetForms(); }}>Batal</Button>
-            <Button type="submit" className="flex-1">Simpan Produk</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsProductDrawerOpen(false); resetForms(); }} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Simpan Produk'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -783,8 +830,17 @@ export default function InventoryPage() {
             />
           )}
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsCustomerDrawerOpen(false); resetForms(); }}>Batal</Button>
-            <Button type="submit" className="flex-1">Simpan Pelanggan</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsCustomerDrawerOpen(false); resetForms(); }} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Simpan Pelanggan'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>
@@ -842,8 +898,17 @@ export default function InventoryPage() {
             />
           )}
           <div className="border-t border-border pt-4 flex gap-3">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsVendorDrawerOpen(false); resetForms(); }}>Batal</Button>
-            <Button type="submit" className="flex-1">Simpan Vendor</Button>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => { setIsVendorDrawerOpen(false); resetForms(); }} disabled={isSaving}>Batal</Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Memproses...</span>
+                </div>
+              ) : (
+                'Simpan Vendor'
+              )}
+            </Button>
           </div>
         </form>
       </Drawer>

@@ -72,6 +72,7 @@ export default function TransactionsPage() {
   // Form states
   const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '' });
   const [isSaving, setIsSaving] = useState(false);
+  const [refillLoadingId, setRefillLoadingId] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   
@@ -895,12 +896,27 @@ export default function TransactionsPage() {
                               variant="outline"
                               size="sm"
                               className="text-xs text-blue-600"
-                              onClick={() => {
-                                receiveRefill(ref.id, new Date().toISOString().split('T')[0]);
-                                alert('Tabung isi ulang diterima kembali di gudang!');
+                              disabled={refillLoadingId !== null}
+                              onClick={async () => {
+                                setRefillLoadingId(ref.id);
+                                try {
+                                  await receiveRefill(ref.id, new Date().toISOString().split('T')[0]);
+                                  alert('Tabung isi ulang diterima kembali di gudang!');
+                                } catch (err: any) {
+                                  alert(err.message || 'Gagal memproses penerimaan refill.');
+                                } finally {
+                                  setRefillLoadingId(null);
+                                }
                               }}
                             >
-                              Konfirmasi Selesai
+                              {refillLoadingId === ref.id ? (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                  <span>Memproses...</span>
+                                </div>
+                              ) : (
+                                'Konfirmasi Selesai'
+                              )}
                             </Button>
                           ) : (
                             <span className="text-xs text-muted-foreground font-semibold">Tuntas</span>

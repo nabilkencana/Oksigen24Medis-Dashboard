@@ -256,7 +256,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           deposit: depositVal,
           rentalFee: Number(r.totalAmount) || 0,
           status: mapRentalStatusToFrontend(r.status),
-          paymentMethod: paymentMethodVal
+          paymentMethod: paymentMethodVal,
+          invoiceNo: r.invoiceNo
         };
       });
 
@@ -312,7 +313,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         totalAmount: Number(s.totalAmount) || 0,
         date: new Date(s.createdAt).toISOString().split('T')[0],
         paymentMethod: s.paymentMethod === 'TRANSFER' ? 'Transfer' : s.paymentMethod === 'E_WALLET' ? 'E-Wallet' : 'Cash',
-        status: s.status === 'PAID' ? 'Paid' : 'Unpaid'
+        status: s.status === 'PAID' ? 'Paid' : 'Unpaid',
+        invoiceNo: s.invoiceNo
       }));
 
       const mappedExpenses: Expense[] = (expensesData.items || []).map((e: any) => {

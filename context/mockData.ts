@@ -53,6 +53,7 @@ export interface Rental {
   rentalFee: number;
   status: 'Active' | 'Returned' | 'Overdue';
   paymentMethod?: 'Cash' | 'Transfer' | 'E-Wallet';
+  invoiceNo?: string;
 }
 
 export interface Refill {
@@ -97,6 +98,7 @@ export interface Sale {
   date: string;
   paymentMethod: 'Cash' | 'Transfer' | 'E-Wallet';
   status: 'Paid' | 'Unpaid';
+  invoiceNo?: string;
 }
 
 export interface Expense {

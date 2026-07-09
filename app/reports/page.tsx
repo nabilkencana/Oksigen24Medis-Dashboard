@@ -15,11 +15,15 @@ export default function ReportsPage() {
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'revenue';
 
-  const { transactions, rentals, expenses, cylinders, customers } = useData();
+  const { transactions, rentals, expenses, cylinders, customers, sales } = useData();
 
   // Filters
-  const [startDate, setStartDate] = useState('2026-06-01');
-  const [endDate, setEndDate] = useState('2026-07-09');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [periodType, setPeriodType] = useState<'Daily' | 'Monthly' | 'Yearly'>('Monthly');
 
   // Change tab helper
@@ -47,17 +51,28 @@ export default function ReportsPage() {
       
       rows = filtered.map((t, index) => {
         let customerName = 'Pelanggan Ritel';
+        let rincian = '';
+        let invoiceNo = t.id;
+
         if (t.type === 'Rental') {
-          const rental = rentals.find(r => `TX-${r.id}` === t.id || r.id === t.id.replace('TX-', ''));
+          const rental = rentals.find(r => r.id === t.referenceId);
           if (rental) {
-            const cust = customers.find(c => c.id === rental.customerId);
-            if (cust) customerName = cust.name;
+            customerName = rental.customerName;
+            invoiceNo = rental.invoiceNo || rental.id;
+            const cyl = cylinders.find(c => c.id === rental.cylinderId);
+            const descStr = cyl ? `${cyl.size} ${cyl.oxygenType}` : 'Tabung Oksigen';
+            rincian = `Sewa ${descStr} (${rental.cylinderSerial})`;
           }
         } else if (t.type === 'Sale') {
-          if (t.description.includes('POS - ')) {
-            customerName = t.description.split('POS - ')[1];
+          const sale = sales.find(s => s.id === t.referenceId);
+          if (sale) {
+            customerName = sale.customerName;
+            invoiceNo = sale.invoiceNo || sale.id;
+            const itemNames = sale.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
+            rincian = `Jual: ${itemNames}`;
           }
         }
+
         const hash = t.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const isKios = t.id.charCodeAt(t.id.length - 1) % 2 === 0;
         const hour = String(7 + (hash % 15)).padStart(2, '0');
@@ -66,27 +81,13 @@ export default function ReportsPage() {
         const isTransfer = t.description.toLowerCase().includes('transfer') || hash % 3 === 1;
         const isQris = !isCash && !isTransfer;
 
-        let rincian = '';
-        if (t.type === 'Rental') {
-          const rental = rentals.find(r => `TX-${r.id}` === t.id || r.id === t.id.replace('TX-', ''));
-          const cyl = rental ? cylinders.find(c => c.id === rental.cylinderId) : null;
-          const serial = cyl ? cyl.serialNo : `SN-OX-${t.id.replace('TX-', '')}`;
-          rincian = `Rental ${serial} - ${customerName}`;
-        } else {
-          if (hash % 2 === 0) {
-            rincian = `Isi ulang tabung ${hash % 4 === 0 ? 'kecil' : 'besar'}`;
-          } else {
-            rincian = `Terjual ${hash % 3 === 0 ? 'Regulator + Troli' : 'Troli Tabung'}`;
-          }
-        }
-
         const dateParts = t.date.split('-');
         const dateWithYear = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : t.date;
 
         return [
           index + 1,
           dateWithYear,
-          t.id.replace('TX-', ''),
+          invoiceNo,
           customerName,
           rincian,
           isKios ? '✓' : '',
@@ -182,30 +183,66 @@ export default function ReportsPage() {
   }, [dateFilteredTransactions]);
 
   const revenueChartData = useMemo(() => {
-    // Generate weekly/monthly labels dynamically based on range
-    return [
-      { label: 'Minggu 1', value: Math.round(revenueTotal * 0.2) },
-      { label: 'Minggu 2', value: Math.round(revenueTotal * 0.25) },
-      { label: 'Minggu 3', value: Math.round(revenueTotal * 0.3) },
-      { label: 'Minggu 4', value: Math.round(revenueTotal * 0.25) }
-    ];
-  }, [revenueTotal]);
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    const totalFiltered = dateFilteredTransactions.filter(
+      t => (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed'
+    );
+
+    if (isNaN(start) || isNaN(end) || start >= end) {
+      return [
+        { label: 'P1', value: 0 },
+        { label: 'P2', value: 0 },
+        { label: 'P3', value: 0 },
+        { label: 'P4', value: 0 }
+      ];
+    }
+
+    const interval = (end - start) / 4;
+    return Array.from({ length: 4 }, (_, i) => {
+      const pStart = start + i * interval;
+      const pEnd = pStart + interval;
+      const subVal = totalFiltered
+        .filter(t => {
+          const tTime = new Date(t.date).getTime();
+          return tTime >= pStart && tTime <= pEnd;
+        })
+        .reduce((sum, t) => sum + t.amount, 0);
+
+      const labelDate = new Date(pStart + interval / 2);
+      const day = String(labelDate.getDate()).padStart(2, '0');
+      const month = String(labelDate.getMonth() + 1).padStart(2, '0');
+      return {
+        label: `${day}/${month}`,
+        value: subVal
+      };
+    });
+  }, [dateFilteredTransactions, startDate, endDate]);
 
   // Dynamic generator matching physical rekapitulasi form columns
   const revenueTableRows = useMemo(() => {
     const filtered = transactions.filter(t => t.date >= startDate && t.date <= endDate && (t.type === 'Rental' || t.type === 'Sale'));
     return filtered.map((t, index) => {
       let customerName = 'Pelanggan Ritel';
-      
+      let rincian = '';
+      let invoiceNo = t.id;
+
       if (t.type === 'Rental') {
-        const rental = rentals.find(r => `TX-${r.id}` === t.id || r.id === t.id.replace('TX-', ''));
+        const rental = rentals.find(r => r.id === t.referenceId);
         if (rental) {
-          const cust = customers.find(c => c.id === rental.customerId);
-          if (cust) customerName = cust.name;
+          customerName = rental.customerName;
+          invoiceNo = rental.invoiceNo || rental.id;
+          const cyl = cylinders.find(c => c.id === rental.cylinderId);
+          const descStr = cyl ? `${cyl.size} ${cyl.oxygenType}` : 'Tabung Oksigen';
+          rincian = `Sewa ${descStr} (${rental.cylinderSerial})`;
         }
       } else if (t.type === 'Sale') {
-        if (t.description.includes('POS - ')) {
-          customerName = t.description.split('POS - ')[1];
+        const sale = sales.find(s => s.id === t.referenceId);
+        if (sale) {
+          customerName = sale.customerName;
+          invoiceNo = sale.invoiceNo || sale.id;
+          const itemNames = sale.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
+          rincian = `Jual: ${itemNames}`;
         }
       }
 
@@ -218,23 +255,13 @@ export default function ReportsPage() {
       const isTransfer = t.description.toLowerCase().includes('transfer') || hash % 3 === 1;
       const isQris = !isCash && !isTransfer;
 
-      let rincian = '';
-      if (t.type === 'Rental') {
-        const rental = rentals.find(r => `TX-${r.id}` === t.id || r.id === t.id.replace('TX-', ''));
-        const cyl = rental ? cylinders.find(c => c.id === rental.cylinderId) : null;
-        const serial = cyl ? cyl.serialNo : `SN-OX-${t.id.replace('TX-', '')}`;
-        rincian = `Rental ${serial} - ${customerName}`;
-      } else {
-        rincian = `Penjualan Retail ✔`;
-      }
-
       const dateParts = t.date.split('-');
       const dateWithYear = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : t.date;
 
       return {
         no: index + 1,
         tanggal: dateWithYear,
-        invoice: t.id.replace('TX-', ''),
+        invoice: invoiceNo,
         customer: customerName,
         rincian: rincian,
         kios: isKios ? '✓' : '',
@@ -245,7 +272,7 @@ export default function ReportsPage() {
         qris: isQris ? t.amount : 0
       };
     });
-  }, [transactions, rentals, cylinders, customers, startDate, endDate]);
+  }, [transactions, rentals, sales, cylinders, customers, startDate, endDate]);
 
   // 2. RENTAL CALCS
   const totalRentalsCount = dateFilteredRentals.length;
@@ -254,12 +281,28 @@ export default function ReportsPage() {
   const returnRate = totalRentalsCount > 0 ? ((returnedRentalsCount / totalRentalsCount) * 100).toFixed(0) : '0';
 
   const rentalChartData = useMemo(() => {
+    let medicalCount = 0;
+    let industrialCount = 0;
+    let hpCount = 0;
+
+    dateFilteredRentals.forEach(r => {
+      const cyl = cylinders.find(c => c.id === r.cylinderId);
+      const type = cyl ? cyl.oxygenType : 'Medical Oxygen';
+      if (type.toLowerCase().includes('medical')) {
+        medicalCount++;
+      } else if (type.toLowerCase().includes('industrial')) {
+        industrialCount++;
+      } else {
+        hpCount++;
+      }
+    });
+
     return [
-      { label: 'Medical Oxygen', value: dateFilteredRentals.filter(r => r.rentalFee < 100000).length },
-      { label: 'Industrial Oxygen', value: dateFilteredRentals.filter(r => r.rentalFee >= 100000 && r.rentalFee < 150000).length },
-      { label: 'High-Purity Oxygen', value: dateFilteredRentals.filter(r => r.rentalFee >= 150000).length }
+      { label: 'Medical Oxygen', value: medicalCount },
+      { label: 'Industrial Oxygen', value: industrialCount },
+      { label: 'High-Purity Oxygen', value: hpCount }
     ];
-  }, [dateFilteredRentals]);
+  }, [dateFilteredRentals, cylinders]);
 
   // 3. EXPENSE CALCS
   const expenseTotal = useMemo(() => {
@@ -269,10 +312,21 @@ export default function ReportsPage() {
   }, [dateFilteredExpenses]);
 
   const expenseBreakdown = useMemo(() => {
+    const categoryTranslations: Record<string, string> = {
+      'Operational': 'Operasional',
+      'Utilities': 'Utilitas (Listrik/Air)',
+      'Rent': 'Sewa Tempat',
+      'Refills': 'Refill Tabung',
+      'Marketing': 'Pemasaran',
+      'Salaries': 'Gaji Karyawan',
+      'Other': 'Lain-lain'
+    };
+
     const categories: Record<string, number> = {};
     dateFilteredExpenses.forEach(e => {
       if (e.status === 'Approved') {
-        categories[e.category] = (categories[e.category] || 0) + e.amount;
+        const translatedLabel = categoryTranslations[e.category] || e.category;
+        categories[translatedLabel] = (categories[translatedLabel] || 0) + e.amount;
       }
     });
     return Object.entries(categories).map(([label, value]) => ({ label, value }));
@@ -493,7 +547,7 @@ export default function ReportsPage() {
                 <CardDescription>Pembagian intensitas sewa tabung kecil 1m3, sedang 2m3, dan besar 6m3</CardDescription>
               </CardHeader>
               <CardContent>
-                <BarChart data={rentalChartData} height={220} color="#10b981" />
+                <BarChart data={rentalChartData} height={220} colors={['#3b82f6', '#10b981', '#f59e0b']} />
               </CardContent>
             </Card>
           </>
@@ -573,7 +627,7 @@ export default function ReportsPage() {
                 <CardDescription>Visualisasi jumlah tabung berdasarkan pembagian lokasi & status operasional</CardDescription>
               </CardHeader>
               <CardContent>
-                <BarChart data={inventoryChartData} height={220} color="#8b5cf6" />
+                <BarChart data={inventoryChartData} height={220} colors={['#10b981', '#3b82f6', '#f59e0b', '#ef4444']} />
               </CardContent>
             </Card>
           </>

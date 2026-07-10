@@ -90,14 +90,14 @@ export default function InventoryPage() {
   });
   const [productForm, setProductForm] = useState<{
     name: string;
-    category: 'Gas' | 'Equipment' | 'Accessory';
+    category: 'Gas' | 'Peralatan' | 'Aksesoris';
     stock: string;
     cost: string;
     price: string;
     description: string;
   }>({
     name: '',
-    category: 'Accessory',
+    category: 'Aksesoris',
     stock: '50',
     cost: '15000',
     price: '25000',
@@ -141,7 +141,7 @@ export default function InventoryPage() {
     setEditingId(null);
     const today = new Date().toISOString().split('T')[0];
     setCylinderForm({ serialNo: '', size: '1m3', oxygenType: 'Medical', lastInspection: today, status: 'Available' });
-    setProductForm({ name: '', category: 'Accessory', stock: '50', cost: '15000', price: '25000', description: '' });
+    setProductForm({ name: '', category: 'Aksesoris', stock: '50', cost: '15000', price: '25000', description: '' });
     setCustomerForm({ name: '', phone: '', address: '', status: 'Active' });
     setVendorForm({ companyName: '', name: '', phone: '', email: '', address: '', status: 'Active' });
   };
@@ -814,8 +814,8 @@ export default function InventoryPage() {
             value={productForm.category}
             onChange={e => setProductForm({ ...productForm, category: e.target.value as any })}
             options={[
-              { value: 'Accessory', label: 'Accessory / Consumables' },
-              { value: 'Equipment', label: 'Equipment / Alat Medis' },
+              { value: 'Aksesoris', label: 'Aksesoris / Consumables' },
+              { value: 'Peralatan', label: 'Peralatan / Alat Medis' },
               { value: 'Gas', label: 'Gas / Isi Ulang' }
             ]}
           />

@@ -32,7 +32,7 @@ export interface Cylinder {
 export interface Product {
   id: string;
   name: string;
-  category: 'Gas' | 'Equipment' | 'Accessory';
+  category: 'Gas' | 'Peralatan' | 'Aksesoris';
   stock: number;
   price: number;
   cost: number;
@@ -188,13 +188,13 @@ export const OXYGEN_TYPES = [
 ];
 
 export const PRODUCTS_LIST: Omit<Product, 'stock'>[] = [
-  { id: 'PRD-01', name: 'Regulator Oksigen Medis', category: 'Equipment', price: 275000, cost: 180000, description: 'Regulator tekanan gas oksigen dengan flowmeter' },
-  { id: 'PRD-02', name: 'Trolley Tabung Oksigen 1m3', category: 'Equipment', price: 150000, cost: 95000, description: 'Troli beroda dua untuk tabung 1m3' },
-  { id: 'PRD-03', name: 'Trolley Tabung Oksigen 6m3', category: 'Equipment', price: 450000, cost: 300000, description: 'Troli kokoh untuk memindahkan tabung 6m3' },
-  { id: 'PRD-04', name: 'Selang Oksigen Nasal Cannula Dewasa', category: 'Accessory', price: 15000, cost: 5000, description: 'Selang hidung steril sekali pakai ukuran dewasa' },
-  { id: 'PRD-05', name: 'Selang Oksigen Nasal Cannula Anak', category: 'Accessory', price: 15000, cost: 5000, description: 'Selang hidung steril sekali pakai ukuran anak' },
-  { id: 'PRD-06', name: 'Masker Oksigen Non-Rebreathing Dewasa', category: 'Accessory', price: 35000, cost: 15000, description: 'Masker oksigen dengan kantung reservoir' },
-  { id: 'PRD-07', name: 'Humidifier Tabung Oksigen', category: 'Accessory', price: 75000, cost: 45000, description: 'Botol pelembab udara untuk pernapasan' },
+  { id: 'PRD-01', name: 'Regulator Oksigen Medis', category: 'Peralatan', price: 275000, cost: 180000, description: 'Regulator tekanan gas oksigen dengan flowmeter' },
+  { id: 'PRD-02', name: 'Trolley Tabung Oksigen 1m3', category: 'Peralatan', price: 150000, cost: 95000, description: 'Troli beroda dua untuk tabung 1m3' },
+  { id: 'PRD-03', name: 'Trolley Tabung Oksigen 6m3', category: 'Peralatan', price: 450000, cost: 300000, description: 'Troli kokoh untuk memindahkan tabung 6m3' },
+  { id: 'PRD-04', name: 'Selang Oksigen Nasal Cannula Dewasa', category: 'Aksesoris', price: 15000, cost: 5000, description: 'Selang hidung steril sekali pakai ukuran dewasa' },
+  { id: 'PRD-05', name: 'Selang Oksigen Nasal Cannula Anak', category: 'Aksesoris', price: 15000, cost: 5000, description: 'Selang hidung steril sekali pakai ukuran anak' },
+  { id: 'PRD-06', name: 'Masker Oksigen Non-Rebreathing Dewasa', category: 'Aksesoris', price: 35000, cost: 15000, description: 'Masker oksigen dengan kantung reservoir' },
+  { id: 'PRD-07', name: 'Humidifier Tabung Oksigen', category: 'Aksesoris', price: 75000, cost: 45000, description: 'Botol pelembab udara untuk pernapasan' },
   { id: 'PRD-08', name: 'Tabung Oksigen 1m3 (Kosong)', category: 'Gas', price: 700000, cost: 550000, description: 'Tabung gas baja kapasitas 1 meter kubik' },
   { id: 'PRD-09', name: 'Tabung Oksigen 2m3 (Kosong)', category: 'Gas', price: 950000, cost: 750000, description: 'Tabung gas baja kapasitas 2 meter kubik' },
   { id: 'PRD-10', name: 'Tabung Oksigen 6m3 (Kosong)', category: 'Gas', price: 1600000, cost: 1200000, description: 'Tabung gas baja kapasitas 6 meter kubik' }
@@ -271,14 +271,14 @@ export function generateInitialData() {
   // Additional products up to 100
   const extraProducts: Product[] = Array.from({ length: 90 }, (_, i) => {
     const id = `PRD-${String(i + 11).padStart(3, '0')}`;
-    const categories: ('Gas' | 'Equipment' | 'Accessory')[] = ['Gas', 'Equipment', 'Accessory'];
+    const categories: ('Gas' | 'Peralatan' | 'Aksesoris')[] = ['Gas', 'Peralatan', 'Aksesoris'];
     const category = getRandomItem(categories);
     const cost = getRandomRange(20, 500) * 1000;
     const price = Math.round(cost * 1.4 / 1000) * 1000;
     const names = {
       Gas: ['Refill Oksigen 1m3', 'Refill Oksigen 2m3', 'Refill Oksigen 6m3', 'Nitrogen Gas 1m3', 'Argon Gas 1m3'],
-      Equipment: ['Wall Flowmeter', 'Cylinder Cap Steel', 'Trolley Stainless 1m3', 'O2 Concentrator 5L'],
-      Accessory: ['Oxygen Tubing Connector', 'Masker Oksigen Anak', 'Wrench Cylinder Valve', 'Filter Concentrator']
+      Peralatan: ['Wall Flowmeter', 'Cylinder Cap Steel', 'Trolley Stainless 1m3', 'O2 Concentrator 5L'],
+      Aksesoris: ['Oxygen Tubing Connector', 'Masker Oksigen Anak', 'Wrench Cylinder Valve', 'Filter Concentrator']
     };
     const name = getRandomItem(names[category]) + ` Type-${getRandomRange(1, 5)}`;
 

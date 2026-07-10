@@ -74,8 +74,8 @@ const mapCylinderStatusToFrontend = (status: string) => {
 
 const mapProductCategoryToFrontend = (catName: string = '') => {
   const name = catName.toLowerCase();
-  if (name.includes('regulator') || name.includes('trolley') || name.includes('stand')) return 'Equipment';
-  if (name.includes('consumable') || name.includes('cannula') || name.includes('mask') || name.includes('tube')) return 'Accessory';
+  if (name.includes('regulator') || name.includes('trolley') || name.includes('stand') || name.includes('peralatan')) return 'Peralatan';
+  if (name.includes('consumable') || name.includes('cannula') || name.includes('mask') || name.includes('tube') || name.includes('aksesoris')) return 'Aksesoris';
   return 'Gas';
 };
 
@@ -661,8 +661,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addProduct = async (prod: any) => {
     const matchedCategory = categories.find(c =>
       c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
-      (prod.category === 'Equipment' && c.name.toLowerCase().includes('regulator')) ||
-      (prod.category === 'Accessory' && c.name.toLowerCase().includes('consumable'))
+      (prod.category === 'Peralatan' && c.name.toLowerCase().includes('regulator')) ||
+      (prod.category === 'Aksesoris' && c.name.toLowerCase().includes('consumable'))
     ) || categories[0];
 
     await fetchApi('/inventory/products', {
@@ -682,7 +682,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProduct = async (id: string, prod: any) => {
-    const matchedCategory = categories.find(cat => cat.name === prod.category);
+    let matchedCategory = categories.find(cat => cat.name === prod.category);
+    if (!matchedCategory && prod.category) {
+      matchedCategory = categories.find(c =>
+        c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
+        (prod.category === 'Peralatan' && c.name.toLowerCase().includes('regulator')) ||
+        (prod.category === 'Aksesoris' && c.name.toLowerCase().includes('consumable'))
+      );
+    }
     const payload: any = {};
     
     if (prod.name !== undefined) payload.name = prod.name;

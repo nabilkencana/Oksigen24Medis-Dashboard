@@ -27,8 +27,9 @@ interface DataContextType {
   stockMovements: StockMovement[];
   purchases: Purchase[];
   sales: Sale[];
-  expenses: Expense[];
   transactions: Transaction[];
+  expenses: Expense[];
+  oxygenTypes: any[];
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   user: any | null;
@@ -902,6 +903,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     <DataContext.Provider
       value={{
         ...data,
+        oxygenTypes,
         theme,
         toggleTheme,
         user,

@@ -12,7 +12,13 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '../../components/ui/Table';
 import { Plus, Search, Edit2, Trash2, ShieldAlert, CheckCircle2, User, Building, Database, ShoppingBag } from 'lucide-react';
 
-type TabType = 'cylinders' | 'products' | 'customers' | 'vendors';
+const isAccessoryAsset = (serial: string, size?: string) => {
+  const s = (serial || '').toUpperCase();
+  const sz = (size || '').toUpperCase();
+  return s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-') || sz === 'PCS';
+};
+
+type TabType = 'cylinders' | 'accessories' | 'products' | 'customers' | 'vendors';
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -25,6 +31,7 @@ export default function InventoryPage() {
     vendors,
     cylinders,
     products,
+    oxygenTypes,
     addCustomer,
     updateCustomer,
     deleteCustomer,
@@ -75,16 +82,17 @@ export default function InventoryPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Form states
+  // Form states
   const [cylinderForm, setCylinderForm] = useState<{
     serialNo: string;
-    size: '1m3' | '2m3' | '6m3';
+    size: '1m3' | '2m3' | '6m3' | 'Pcs';
     oxygenType: string;
     lastInspection: string;
     status: 'Available' | 'Rented' | 'At Vendor' | 'Maintenance' | 'Empty';
   }>({
     serialNo: '',
     size: '1m3',
-    oxygenType: 'Medical',
+    oxygenType: 'Medical Oxygen 99.5%',
     lastInspection: '',
     status: 'Available'
   });
@@ -140,7 +148,13 @@ export default function InventoryPage() {
   const resetForms = () => {
     setEditingId(null);
     const today = new Date().toISOString().split('T')[0];
-    setCylinderForm({ serialNo: '', size: '1m3', oxygenType: 'Medical', lastInspection: today, status: 'Available' });
+    setCylinderForm({
+      serialNo: '',
+      size: activeTab === 'accessories' ? 'Pcs' : '1m3',
+      oxygenType: activeTab === 'accessories' ? 'Sewa Regulator Medis' : 'Medical Oxygen 99.5%',
+      lastInspection: today,
+      status: 'Available'
+    });
     setProductForm({ name: '', category: 'Aksesoris', stock: '50', cost: '15000', price: '25000', description: '' });
     setCustomerForm({ name: '', phone: '', address: '', status: 'Active' });
     setVendorForm({ companyName: '', name: '', phone: '', email: '', address: '', status: 'Active' });
@@ -154,6 +168,16 @@ export default function InventoryPage() {
 
     if (activeTab === 'cylinders') {
       return cylinders.filter(c => {
+        if (isAccessoryAsset(c.serialNo, c.size)) return false;
+        const matchesSearch = c.serialNo.toLowerCase().includes(query) || c.id.toLowerCase().includes(query);
+        const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      });
+    }
+
+    if (activeTab === 'accessories') {
+      return cylinders.filter(c => {
+        if (!isAccessoryAsset(c.serialNo, c.size)) return false;
         const matchesSearch = c.serialNo.toLowerCase().includes(query) || c.id.toLowerCase().includes(query);
         const matchesStatus = statusFilter === 'All' || c.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -355,6 +379,12 @@ export default function InventoryPage() {
             Tabung Oksigen
           </button>
           <button
+            onClick={() => changeTab('accessories')}
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'accessories' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Aset Aksesoris
+          </button>
+          <button
             onClick={() => changeTab('products')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'products' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
           >
@@ -381,22 +411,27 @@ export default function InventoryPage() {
           <div>
             <CardTitle>
               {activeTab === 'cylinders' && 'Aset Tabung Oksigen'}
+              {activeTab === 'accessories' && 'Aset Aksesoris'}
               {activeTab === 'products' && 'Katalog Produk & Aksesoris'}
               {activeTab === 'customers' && 'Database Pelanggan'}
               {activeTab === 'vendors' && 'Database Mitra Vendor'}
             </CardTitle>
             <CardDescription>
               {activeTab === 'cylinders' && 'Inventarisasi tabung gas medis dan kelayakan uji tekan.'}
+              {activeTab === 'accessories' && 'Inventarisasi aset aksesoris medis (regulator, troli) yang disewakan.'}
               {activeTab === 'products' && 'Manajemen persediaan barang retail medis non-persewaan.'}
               {activeTab === 'customers' && 'Detail nomor kontak, alamat kirim sewa, dan saldo pelanggan.'}
               {activeTab === 'vendors' && 'Profil PIC vendor penyuplai logistik atau pabrik refill.'}
             </CardDescription>
           </div>
+          
           <Button
-            className="flex items-center gap-1.5 self-start"
+            className="flex items-center gap-1.5 shrink-0"
             onClick={() => {
-              resetForms();
-              if (activeTab === 'cylinders') setIsCylinderDrawerOpen(true);
+              if (activeTab === 'cylinders' || activeTab === 'accessories') {
+                resetForms();
+                setIsCylinderDrawerOpen(true);
+              }
               if (activeTab === 'products') setIsProductDrawerOpen(true);
               if (activeTab === 'customers') setIsCustomerDrawerOpen(true);
               if (activeTab === 'vendors') setIsVendorDrawerOpen(true);
@@ -404,6 +439,7 @@ export default function InventoryPage() {
           >
             <Plus className="w-4 h-4" />
             {activeTab === 'cylinders' && 'Tabung Baru'}
+            {activeTab === 'accessories' && 'Aksesoris Baru'}
             {activeTab === 'products' && 'Produk Baru'}
             {activeTab === 'customers' && 'Pelanggan Baru'}
             {activeTab === 'vendors' && 'Vendor Baru'}
@@ -418,7 +454,7 @@ export default function InventoryPage() {
               <input
                 type="text"
                 placeholder={
-                  activeTab === 'cylinders' ? 'Cari serial number tabung...' :
+                  (activeTab === 'cylinders' || activeTab === 'accessories') ? 'Cari serial number/aset...' :
                   activeTab === 'products' ? 'Cari nama produk...' :
                   activeTab === 'customers' ? 'Cari nama pelanggan...' :
                   'Cari profil vendor...'
@@ -436,31 +472,37 @@ export default function InventoryPage() {
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
                 options={
-                  activeTab === 'cylinders' ? [
+                  (activeTab === 'cylinders' || activeTab === 'accessories') ? [
                     { value: 'All', label: 'Semua Status' },
                     { value: 'Available', label: 'Tersedia' },
-                    { value: 'Rented', label: 'Sedang Disewa' },
-                    { value: 'At Vendor', label: 'Di Vendor Refill' },
-                    { value: 'Maintenance', label: 'Maintenance' }
+                    { value: 'Rented', label: 'Disewa' },
+                    { value: 'At Vendor', label: 'Di Vendor' },
+                    { value: 'Maintenance', label: 'Servis' },
+                    { value: 'Empty', label: 'Kosong' }
+                  ] :
+                  activeTab === 'customers' ? [
+                    { value: 'All', label: 'Semua Status' },
+                    { value: 'Active', label: 'Aktif' },
+                    { value: 'Inactive', label: 'Nonaktif' }
                   ] : [
                     { value: 'All', label: 'Semua Status' },
                     { value: 'Active', label: 'Aktif' },
-                    { value: 'Inactive', label: 'Non-Aktif' }
+                    { value: 'Inactive', label: 'Nonaktif' }
                   ]
                 }
               />
             </div>
           </div>
 
-          {/* 1. CYLINDERS TABLE */}
-          {activeTab === 'cylinders' && paginatedData.length > 0 && (
+          {/* 1. CYLINDERS & ACCESSORIES TABLE */}
+          {(activeTab === 'cylinders' || activeTab === 'accessories') && paginatedData.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Tabung</TableHead>
+                  <TableHead>{activeTab === 'accessories' ? 'ID Aksesoris' : 'ID Tabung'}</TableHead>
                   <TableHead>Nomor Serial (SN)</TableHead>
-                  <TableHead>Ukuran</TableHead>
-                  <TableHead>Tipe Gas</TableHead>
+                  <TableHead>{activeTab === 'accessories' ? 'Satuan' : 'Ukuran'}</TableHead>
+                  <TableHead>{activeTab === 'accessories' ? 'Nama Aksesoris' : 'Tipe Gas'}</TableHead>
                   <TableHead>Inspeksi Terakhir</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -491,12 +533,12 @@ export default function InventoryPage() {
                         className="px-2 text-rose-500 hover:bg-rose-500/10"
                         disabled={deletingId !== null}
                         onClick={async () => {
-                          if (confirm('Hapus tabung ini?')) {
+                          if (confirm(activeTab === 'accessories' ? 'Hapus aksesoris ini?' : 'Hapus tabung ini?')) {
                             setDeletingId(c.id);
                             try {
                               await deleteCylinder(c.id);
                             } catch (err: any) {
-                              alert(err.message || 'Gagal menghapus tabung.');
+                              alert(err.message || 'Gagal menghapus.');
                             } finally {
                               setDeletingId(null);
                             }
@@ -726,41 +768,56 @@ export default function InventoryPage() {
       {/* FORM DRAWERS (ADD / EDIT LAYOUTS) */}
       {/* ------------------------------------------------------------- */}
       
-      {/* 1. CYLINDER DRAWER */}
-      <Drawer isOpen={isCylinderDrawerOpen} onClose={() => { setIsCylinderDrawerOpen(false); resetForms(); }} title={editingId ? 'Edit Tabung Baja' : 'Tambah Tabung Oksigen Baru'}>
+      {/* 1. CYLINDER & ACCESSORIES DRAWER */}
+      <Drawer
+        isOpen={isCylinderDrawerOpen}
+        onClose={() => {
+          setIsCylinderDrawerOpen(false);
+          resetForms();
+        }}
+        title={editingId
+          ? (isAccessoryAsset(cylinderForm.serialNo, cylinderForm.size) ? 'Edit Aset Aksesoris' : 'Edit Tabung Baja')
+          : (activeTab === 'accessories' ? 'Tambah Aset Aksesoris Baru' : 'Tambah Tabung Oksigen Baru')
+        }
+      >
         <form onSubmit={handleCylinderSubmit} className="space-y-4">
           <Input
-            label="Nomor Serial Tabung (SN) *"
+            label={activeTab === 'accessories' ? "Nomor Serial Aksesoris (SN) *" : "Nomor Serial Tabung (SN) *"}
             id="cylSn"
-            placeholder="e.g. SN-OX-12345"
+            placeholder={activeTab === 'accessories' ? "e.g. REG-NES-001" : "e.g. SN-OX-12345"}
             value={cylinderForm.serialNo}
             onChange={e => setCylinderForm({ ...cylinderForm, serialNo: e.target.value })}
             required
           />
           <Select
-            label="Ukuran Volume Tabung *"
+            label={activeTab === 'accessories' ? "Satuan / Unit *" : "Ukuran Volume Tabung *"}
             id="cylSize"
             value={cylinderForm.size}
             onChange={e => setCylinderForm({ ...cylinderForm, size: e.target.value as any })}
-            options={[
+            options={activeTab === 'accessories' ? [
+              { value: 'Pcs', label: 'Pcs' }
+            ] : [
               { value: '1m3', label: '1 m³' },
               { value: '2m3', label: '2 m³' },
               { value: '6m3', label: '6 m³' }
             ]}
           />
           <Select
-            label="Grade Kandungan Gas *"
+            label={activeTab === 'accessories' ? "Nama / Tipe Aksesoris *" : "Grade Kandungan Gas *"}
             id="cylType"
             value={cylinderForm.oxygenType}
             onChange={e => setCylinderForm({ ...cylinderForm, oxygenType: e.target.value as any })}
-            options={[
-              { value: 'Medical', label: 'Medical Oxygen (99.5%)' },
-              { value: 'Industrial', label: 'Industrial Oxygen (99.2%)' },
-              { value: 'High-Purity', label: 'High Purity (99.99%)' }
-            ]}
+            options={
+              activeTab === 'accessories' ? oxygenTypes
+                .filter(t => t.name.toLowerCase().includes('sewa') || t.name.toLowerCase().includes('regulator') || t.name.toLowerCase().includes('troli'))
+                .map(t => ({ value: t.name, label: t.name }))
+              : oxygenTypes
+                .filter(t => !t.name.toLowerCase().includes('sewa') && !t.name.toLowerCase().includes('regulator') && !t.name.toLowerCase().includes('troli'))
+                .map(t => ({ value: t.name, label: t.name }))
+            }
           />
           <Input
-            label="Tanggal Hydrotest / Inspeksi Terakhir *"
+            label={activeTab === 'accessories' ? "Tanggal Inspeksi / Kelayakan *" : "Tanggal Hydrotest / Inspeksi Terakhir *"}
             id="cylInspect"
             type="date"
             value={cylinderForm.lastInspection}
@@ -768,11 +825,15 @@ export default function InventoryPage() {
           />
           {editingId && (
             <Select
-              label="Status Posisi Tabung *"
+              label={activeTab === 'accessories' ? "Status Posisi Aksesoris *" : "Status Posisi Tabung *"}
               id="cylStat"
               value={cylinderForm.status}
               onChange={e => setCylinderForm({ ...cylinderForm, status: e.target.value as any })}
-              options={[
+              options={activeTab === 'accessories' ? [
+                { value: 'Available', label: 'Tersedia di Gudang (Available)' },
+                { value: 'Rented', label: 'Sedang Disewa (Rented)' },
+                { value: 'Maintenance', label: 'Sedang Servis (Maintenance)' }
+              ] : [
                 { value: 'Available', label: 'Tersedia di Gudang (Available)' },
                 { value: 'Rented', label: 'Sedang Disewa (Rented)' },
                 { value: 'At Vendor', label: 'Isi Ulang di Vendor (At Vendor)' },

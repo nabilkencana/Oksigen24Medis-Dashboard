@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle, ArrowRight, Activity, ShieldCheck, FileText, Package, Sun, Moon } from 'lucide-react';
+import { BASE_URL } from '../context/apiClient';
 
 interface LoginOverlayProps {
   onLoginSuccess: (user: any, tokens: { accessToken: string; refreshToken: string }) => void;
@@ -50,7 +51,7 @@ export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3000/auth/login', {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

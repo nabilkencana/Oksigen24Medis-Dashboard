@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
-import { fetchApi } from './apiClient';
+import { fetchApi, BASE_URL } from './apiClient';
 import LoginOverlay from '../components/LoginOverlay';
 import {
   Customer,
@@ -523,7 +523,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const connect = () => {
       console.log('[WS] Connecting to real-time events...');
-      socket = new WebSocket('ws://localhost:3000');
+      const wsUrl = BASE_URL.replace(/^http/, 'ws');
+      socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
         console.log('[WS] Connected to Realtime Gateway successfully');

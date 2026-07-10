@@ -23,8 +23,15 @@ import {
   ArrowDownRight,
   Activity,
   CheckCircle2,
-  PackageCheck
+  PackageCheck,
+  UserPlus
 } from 'lucide-react';
+
+const isAccessoryAsset = (serial: string, size?: string) => {
+  const s = (serial || '').toUpperCase();
+  const sz = (size || '').toUpperCase();
+  return s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-') || sz === 'PCS';
+};
 
 export default function Home() {
   const router = useRouter();
@@ -38,6 +45,7 @@ export default function Home() {
     expenses,
     transactions,
     stockMovements,
+    addCustomer,
     createRental,
     sendToRefill,
     createSale,
@@ -46,9 +54,13 @@ export default function Home() {
   } = useData();
 
   // Drawer states
-  const [activeDrawer, setActiveDrawer] = useState<'rental' | 'refill' | 'sale' | 'expense' | null>(null);
+  const [activeDrawer, setActiveDrawer] = useState<'rental' | 'accessory-rental' | 'refill' | 'sale' | 'expense' | null>(null);
   const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [newCustName, setNewCustName] = useState('');
+  const [newCustPhone, setNewCustPhone] = useState('');
+  const [newCustAddress, setNewCustAddress] = useState('');
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const, serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [expenseForm, setExpenseForm] = useState({ category: 'Operational' as const, description: '', amount: '', date: '' });
@@ -145,14 +157,40 @@ export default function Home() {
   // Quick Action form submissions
   const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rentalForm.customerId || !rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
+    
+    let targetCustomerId = rentalForm.customerId;
+
+    if (isNewCustomer) {
+      if (!newCustName.trim() || !newCustPhone.trim() || !newCustAddress.trim()) {
+        alert('Harap isi semua kolom wajib untuk pelanggan baru.');
+        return;
+      }
+    } else {
+      if (!targetCustomerId) {
+        alert('Harap pilih customer.');
+        return;
+      }
+    }
+
+    if (!rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
+
     setIsSaving(true);
     try {
+      if (isNewCustomer) {
+        // Create new customer on the fly
+        const newCust = await addCustomer({
+          name: newCustName.trim(),
+          phone: newCustPhone.trim(),
+          address: newCustAddress.trim(),
+        });
+        targetCustomerId = newCust.id;
+      }
+
       await createRental({
-        customerId: rentalForm.customerId,
+        customerId: targetCustomerId,
         cylinderId: rentalForm.cylinderId,
         rentDate: rentalForm.rentDate,
         returnDate: rentalForm.returnDate,
@@ -163,6 +201,10 @@ export default function Home() {
       });
       setActiveDrawer(null);
       setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
+      setIsNewCustomer(false);
+      setNewCustName('');
+      setNewCustPhone('');
+      setNewCustAddress('');
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -377,6 +419,7 @@ export default function Home() {
         const userRole = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
         const quickActions = [
           { label: 'Sewa Tabung Baru',   icon: <Plus className="w-3.5 h-3.5" />,                                           onClick: () => setActiveDrawer('rental'),                      roles: ['OWNER','ADMIN','WAREHOUSE'], primary: true },
+          { label: 'Sewa Aksesoris Baru', icon: <Plus className="w-3.5 h-3.5" />,                                          onClick: () => setActiveDrawer('accessory-rental'),            roles: ['OWNER','ADMIN','WAREHOUSE'], primary: true },
           { label: 'Kembalikan Tabung',  icon: <Clock className="w-3.5 h-3.5 text-orange-500" />,                          onClick: () => router.push('/transactions?tab=return'),         roles: ['OWNER','ADMIN','WAREHOUSE'] },
           { label: 'Kirim Refill Vendor',icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />,                        onClick: () => setActiveDrawer('refill'),                       roles: ['OWNER','ADMIN','WAREHOUSE'] },
           { label: 'POS Kasir Ritel',    icon: <DollarSign className="w-3.5 h-3.5 text-purple-500" />,                     onClick: () => setActiveDrawer('sale'),                         roles: ['OWNER','ADMIN','FINANCE'] },
@@ -492,39 +535,109 @@ export default function Home() {
 
       {/* DRAWERS (Forms Implementation) */}
       
-      {/* 1. SEWA TABUNG DRAWER */}
-      <Drawer isOpen={activeDrawer === 'rental'} onClose={() => setActiveDrawer(null)} title="Buat Kontrak Sewa Baru">
+      {/* 1. SEWA TABUNG & AKSESORIS DRAWER */}
+      <Drawer
+        isOpen={activeDrawer === 'rental' || activeDrawer === 'accessory-rental'}
+        onClose={() => {
+          setActiveDrawer(null);
+          setIsNewCustomer(false);
+          setNewCustName('');
+          setNewCustPhone('');
+          setNewCustAddress('');
+        }}
+        title={activeDrawer === 'accessory-rental' ? 'Buat Kontrak Sewa Aksesoris Baru' : 'Buat Kontrak Sewa Tabung Baru'}
+      >
         <form onSubmit={handleRentalSubmit} className="space-y-4">
+          {/* Select/Input Customer Toggle */}
+          <div className="space-y-1.5 w-full">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Customer *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewCustomer(!isNewCustomer);
+                  setRentalForm(prev => ({ ...prev, customerId: '' }));
+                  setNewCustName('');
+                  setNewCustPhone('');
+                  setNewCustAddress('');
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+              >
+                {isNewCustomer ? (
+                  <>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Pilih dari Daftar</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Pelanggan Baru</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {isNewCustomer ? (
+              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                <Input
+                  label="Nama Lengkap *"
+                  id="newCustName"
+                  placeholder="e.g. Budi Santoso"
+                  value={newCustName}
+                  onChange={e => setNewCustName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="WhatsApp / No Telp *"
+                  id="newCustPhone"
+                  placeholder="e.g. 08123456789"
+                  value={newCustPhone}
+                  onChange={e => setNewCustPhone(e.target.value)}
+                  required
+                />
+                <Textarea
+                  label="Alamat Lengkap Pengiriman *"
+                  id="newCustAddress"
+                  placeholder="Alamat rumah / lokasi pengiriman tabung..."
+                  value={newCustAddress}
+                  onChange={e => setNewCustAddress(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <Select
+                id="rentCust"
+                value={rentalForm.customerId}
+                onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
+                options={[
+                  { value: '', label: '-- Pilih Pelanggan --' },
+                  ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                ]}
+              />
+            )}
+          </div>
           <Select
-            label="Pilih Customer *"
-            id="rentCust"
-            value={rentalForm.customerId}
-            onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
-            options={[
-              { value: '', label: '-- Pilih Pelanggan --' },
-              ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
-            ]}
-          />
-          <Select
-            label="Pilih Tabung Oksigen Tersedia *"
-            id="rentCyl"
+            label={activeDrawer === 'accessory-rental' ? "Pilih Aksesoris *" : "Pilih Tabung Oksigen *"}
+            id="rentCylinder"
             value={rentalForm.cylinderId}
             onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
             options={[
-              { value: '', label: '-- Pilih Tabung --' },
-              ...cylinders.map(c => {
-                let statusLabel = 'Tersedia';
-                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
-                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
-                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
-                if (c.status === 'Empty') statusLabel = 'Kosong';
-                
-                return {
-                  value: c.id,
-                  label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
-                  disabled: c.status !== 'Available'
-                };
-              })
+              { value: '', label: activeDrawer === 'accessory-rental' ? '-- Pilih Aksesoris --' : '-- Pilih Tabung --' },
+              ...cylinders
+                .filter(c => {
+                  const isAcc = isAccessoryAsset(c.serialNo, c.size);
+                  return activeDrawer === 'accessory-rental' ? isAcc : !isAcc;
+                })
+                .map(c => {
+                  const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
+                  return {
+                    value: c.id,
+                    label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                    disabled: c.status !== 'Available'
+                  };
+                })
             ]}
           />
           <div className="grid grid-cols-2 gap-4">

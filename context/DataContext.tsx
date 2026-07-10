@@ -47,7 +47,7 @@ interface DataContextType {
   updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   // Workflows
-  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string; serviceType?: 'Kios' | 'Antar' }) => Promise<void>;
+  createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string; serviceType?: 'Kios' | 'Antar'; accessories?: Array<{ name: string; qty: number; fee: number; deposit: number }> }) => Promise<void>;
   returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => Promise<void>;
   sendToRefill: (refillData: { cylinderId: string; vendorId: string; cost: number; sendDate: string }) => Promise<void>;
   receiveRefill: (refillId: string, returnDate: string) => Promise<void>;
@@ -225,7 +225,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         id: c.id,
         name: c.name,
         phone: c.phone || '',
-        email: c.email || '',
         address: c.address || '',
         status: c.isActive ? 'Active' : 'Inactive',
         balance: Number(c.balance) || 0,
@@ -289,6 +288,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        let accessoriesVal: Array<{ name: string; qty: number; fee: number; deposit: number }> = [];
+        if (r.notes && r.notes.includes('[ACCESSORIES:')) {
+          const match = r.notes.match(/\[ACCESSORIES:\s*([^\]]+)\]/);
+          if (match) {
+            const accParts = match[1].split(';');
+            accParts.forEach((part: string) => {
+              const cleaned = part.trim();
+              if (!cleaned) return;
+              // Regulator(1)|fee:50000|dep:100000
+              const mainMatch = cleaned.match(/^([^(]+)\((\d+)\)\|fee:(\d+)\|dep:(\d+)$/);
+              if (mainMatch) {
+                accessoriesVal.push({
+                  name: mainMatch[1].trim(),
+                  qty: Number(mainMatch[2]),
+                  fee: Number(mainMatch[3]),
+                  deposit: Number(mainMatch[4])
+                });
+              }
+            });
+          }
+        }
+
+        const totalAccFees = accessoriesVal.reduce((sum, a) => sum + (a.fee * a.qty), 0);
+        const totalAccDeposits = accessoriesVal.reduce((sum, a) => sum + (a.deposit * a.qty), 0);
+
         return {
           id: r.id,
           customerId: r.customerId,
@@ -298,12 +322,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           rentDate: new Date(r.createdAt).toISOString().split('T')[0],
           returnDate: new Date(r.dueDate).toISOString().split('T')[0],
           actualReturnDate: r.returnDate ? new Date(r.returnDate).toISOString().split('T')[0] : undefined,
-          deposit: depositVal,
-          rentalFee: Number(r.totalAmount) || 0,
+          cylinderDeposit: depositVal,
+          cylinderFee: Number(r.totalAmount) || 0,
+          deposit: depositVal + totalAccDeposits,
+          rentalFee: (Number(r.totalAmount) || 0) + totalAccFees,
           status: mapRentalStatusToFrontend(r.status),
           paymentMethod: paymentMethodVal,
           invoiceNo: r.invoiceNo,
-          serviceType: serviceTypeVal
+          serviceType: serviceTypeVal,
+          accessories: accessoriesVal
         };
       });
 
@@ -529,7 +556,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         name: cust.name,
         phone: cust.phone,
-        email: cust.email || `${cust.name.toLowerCase().replace(/\s/g, '')}@gmail.com`,
         address: cust.address || ''
       })
     });
@@ -543,7 +569,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         name: cust.name,
         phone: cust.phone,
-        email: cust.email,
         address: cust.address,
         isActive: cust.status === undefined ? undefined : (cust.status === 'Active')
       })
@@ -686,7 +711,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const depositAmount = Number(rentalData.deposit) || 0;
     const payMethod = (rentalData.paymentMethod || 'CASH').toUpperCase();
     const sType = (rentalData.serviceType || 'Kios').toUpperCase();
-    const notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}] [SERVICE: ${sType}]`;
+    
+    let notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}] [SERVICE: ${sType}]`;
+    if (rentalData.accessories && rentalData.accessories.length > 0) {
+      const accStr = rentalData.accessories.map((a: any) => `${a.name}(${a.qty})|fee:${a.fee}|dep:${a.deposit}`).join(';');
+      notesPayload += ` [ACCESSORIES: ${accStr}]`;
+    }
+
+    const totalAccFees = rentalData.accessories?.reduce((sum: number, a: any) => sum + (a.fee * a.qty), 0) || 0;
 
     await fetchApi('/transactions/rentals', {
       method: 'POST',
@@ -694,7 +726,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         customerId: rentalData.customerId,
         dueDate: new Date(rentalData.returnDate).toISOString(),
         cylinderIds: [rentalData.cylinderId],
-        amountPaid: Number(rentalData.rentalFee) || 0,
+        amountPaid: (Number(rentalData.rentalFee) || 0) + totalAccFees,
         notes: notesPayload
       })
     });
@@ -710,6 +742,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         cylinderIds: [rental.cylinderId]
       })
     });
+
+    // If it is an accessory, automatically set its status to 'Available' or 'Maintenance'
+    const s = (rental.cylinderSerial || '').toUpperCase();
+    const isAcc = s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-');
+    if (isAcc) {
+      const targetStatus = status === 'Maintenance' ? 'Maintenance' : 'Available';
+      await updateCylinder(rental.cylinderId, { status: targetStatus });
+    } else {
+      if (status === 'Maintenance') {
+        await updateCylinder(rental.cylinderId, { status: 'Maintenance' });
+      }
+    }
+
     await refreshAllData();
   };
 

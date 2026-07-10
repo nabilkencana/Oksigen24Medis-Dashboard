@@ -4,7 +4,6 @@ export interface Customer {
   id: string;
   name: string;
   phone: string;
-  email: string;
   address: string;
   status: 'Active' | 'Inactive';
   balance: number;
@@ -55,6 +54,9 @@ export interface Rental {
   paymentMethod?: 'Cash' | 'Transfer' | 'E-Wallet';
   invoiceNo?: string;
   serviceType?: 'Kios' | 'Antar';
+  cylinderDeposit?: number;
+  cylinderFee?: number;
+  accessories?: Array<{ name: string; qty: number; fee: number; deposit: number }>;
 }
 
 export interface Refill {

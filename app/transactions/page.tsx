@@ -12,7 +12,13 @@ import { Drawer } from '../../components/ui/Drawer';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '../../components/ui/Table';
 import { Plus, Search, Eye, RefreshCw, Printer, Calendar, FileText, ChevronRight, X, ShoppingCart, Trash2, CheckCircle2, UserPlus, Database } from 'lucide-react';
 
-type TabType = 'rental' | 'return' | 'sales' | 'restock' | 'refill';
+const isAccessoryAsset = (serial: string, size?: string) => {
+  const s = (serial || '').toUpperCase();
+  const sz = (size || '').toUpperCase();
+  return s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-') || sz === 'PCS';
+};
+
+type TabType = 'rental' | 'accessory-rental' | 'return' | 'sales' | 'restock' | 'refill';
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -73,6 +79,10 @@ export default function TransactionsPage() {
   // Form states
   const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
+  const [rentIsNewCustomer, setRentIsNewCustomer] = useState(false);
+  const [rentNewCustName, setRentNewCustName] = useState('');
+  const [rentNewCustPhone, setRentNewCustPhone] = useState('');
+  const [rentNewCustAddress, setRentNewCustAddress] = useState('');
   const [refillLoadingId, setRefillLoadingId] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
@@ -109,16 +119,21 @@ export default function TransactionsPage() {
   // -------------------------------------------------------------
   const filteredRentals = useMemo(() => {
     return rentals.filter(r => {
+      const isAcc = isAccessoryAsset(r.cylinderSerial || '');
+      const isCorrectTabType = activeTab === 'accessory-rental' ? isAcc : !isAcc;
+      if (!isCorrectTabType) return false;
+
       const cust = customers.find(c => c.id === r.customerId);
       const matchesSearch =
         r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (cust && cust.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        r.cylinderId.toLowerCase().includes(searchTerm.toLowerCase());
+        r.cylinderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.cylinderSerial || '').toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [rentals, customers, searchTerm, statusFilter]);
+  }, [rentals, customers, searchTerm, statusFilter, activeTab]);
 
   const paginatedRentals = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -278,14 +293,40 @@ export default function TransactionsPage() {
   // -------------------------------------------------------------
   const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!rentalForm.customerId || !rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
+    
+    let targetCustomerId = rentalForm.customerId;
+
+    if (rentIsNewCustomer) {
+      if (!rentNewCustName.trim() || !rentNewCustPhone.trim() || !rentNewCustAddress.trim()) {
+        alert('Harap isi semua kolom wajib untuk pelanggan baru.');
+        return;
+      }
+    } else {
+      if (!targetCustomerId) {
+        alert('Harap pilih customer.');
+        return;
+      }
+    }
+
+    if (!rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
+
     setIsSaving(true);
     try {
+      if (rentIsNewCustomer) {
+        // Create new customer on the fly
+        const newCust = await addCustomer({
+          name: rentNewCustName.trim(),
+          phone: rentNewCustPhone.trim(),
+          address: rentNewCustAddress.trim(),
+        });
+        targetCustomerId = newCust.id;
+      }
+
       await createRental({
-        customerId: rentalForm.customerId,
+        customerId: targetCustomerId,
         cylinderId: rentalForm.cylinderId,
         rentDate: rentalForm.rentDate,
         returnDate: rentalForm.returnDate,
@@ -296,6 +337,10 @@ export default function TransactionsPage() {
       });
       setIsRentalDrawerOpen(false);
       setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
+      setRentIsNewCustomer(false);
+      setRentNewCustName('');
+      setRentNewCustPhone('');
+      setRentNewCustAddress('');
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -430,6 +475,12 @@ export default function TransactionsPage() {
             Sewa Tabung
           </button>
           <button
+            onClick={() => changeTab('accessory-rental')}
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'accessory-rental' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Sewa Aksesoris
+          </button>
+          <button
             onClick={() => changeTab('return')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'return' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
           >
@@ -456,17 +507,29 @@ export default function TransactionsPage() {
         </div>
       </div>
 
+      {/* 1. SEWA TABUNG & SEWA AKSESORIS TABS */}
       {/* ----------------------------------------------------------------- */}
-      {/* 1. SEWA TABUNG TAB */}
-      {/* ----------------------------------------------------------------- */}
-      {activeTab === 'rental' && (
+      {(activeTab === 'rental' || activeTab === 'accessory-rental') && (
         <Card>
           <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
-              <CardTitle>Kontrak Sewa Oksigen</CardTitle>
-              <CardDescription>Daftar transaksi pinjam tabung dan deposit jaminan pelanggan.</CardDescription>
+              <CardTitle>{activeTab === 'accessory-rental' ? 'Kontrak Sewa Aksesoris' : 'Kontrak Sewa Oksigen'}</CardTitle>
+              <CardDescription>
+                {activeTab === 'accessory-rental' 
+                  ? 'Daftar transaksi pinjam aksesoris medis (regulator, troli, dll) dan jaminan pelanggan.' 
+                  : 'Daftar transaksi pinjam tabung dan deposit jaminan pelanggan.'}
+              </CardDescription>
             </div>
-            <Button className="flex items-center gap-1.5 self-start" onClick={() => setIsRentalDrawerOpen(true)}>
+            <Button 
+              className="flex items-center gap-1.5 self-start" 
+              onClick={() => {
+                setRentalForm(prev => ({
+                  ...prev,
+                  cylinderId: '' // Clear any previous cylinder selection
+                }));
+                setIsRentalDrawerOpen(true);
+              }}
+            >
               <Plus className="w-4 h-4" /> Sewa Baru
             </Button>
           </CardHeader>
@@ -506,7 +569,7 @@ export default function TransactionsPage() {
                     <TableRow>
                       <TableHead>ID Sewa</TableHead>
                       <TableHead>Pelanggan</TableHead>
-                      <TableHead>Tabung / Size</TableHead>
+                      <TableHead>{activeTab === 'accessory-rental' ? 'Aksesoris / Qty' : 'Tabung / Size'}</TableHead>
                       <TableHead>Tanggal Sewa</TableHead>
                       <TableHead>Batas Kembali</TableHead>
                       <TableHead>Deposit Jaminan</TableHead>
@@ -524,7 +587,13 @@ export default function TransactionsPage() {
                             <p className="font-semibold">{cust ? cust.name : 'Unknown'}</p>
                             <p className="text-3xs text-muted-foreground">{r.customerId}</p>
                           </TableCell>
-                          <TableCell>{r.cylinderId}</TableCell>
+                          <TableCell>
+                            <span className="font-medium text-foreground">{r.cylinderSerial || r.cylinderId}</span>
+                            {(() => {
+                              const cyl = cylinders.find(c => c.id === r.cylinderId);
+                              return cyl ? <span className="text-2xs text-muted-foreground ml-1.5">({cyl.size} - {cyl.oxygenType})</span> : null;
+                            })()}
+                          </TableCell>
                           <TableCell>{r.rentDate}</TableCell>
                           <TableCell>{r.returnDate}</TableCell>
                           <TableCell className="font-medium text-foreground">{formatRupiah(r.deposit)}</TableCell>
@@ -581,29 +650,34 @@ export default function TransactionsPage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div>
-              <CardTitle>Logistik Pengembalian Tabung</CardTitle>
-              <CardDescription>Proses pengembalian tabung sewa dari tangan pelanggan ke gudang.</CardDescription>
+              <CardTitle>Logistik Pengembalian Barang (Tabung & Aksesoris)</CardTitle>
+              <CardDescription>Proses pengembalian tabung dan aksesoris sewa dari tangan pelanggan ke gudang.</CardDescription>
             </div>
             <Button
               className="flex items-center gap-1.5 self-start bg-success text-white hover:bg-success/90"
               onClick={() => setIsReturnDrawerOpen(true)}
               disabled={rentedCylindersForReturn.length === 0}
             >
-              <Plus className="w-4 h-4" /> Proses Tabung Kembali
+              <Plus className="w-4 h-4" /> Proses Pengembalian Barang
             </Button>
           </CardHeader>
           <CardContent>
             {rentedCylindersForReturn.length > 0 ? (
               <div className="space-y-4">
                 <p className="text-xs text-amber-600 font-bold bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
-                  ⚠️ Terdapat {rentedCylindersForReturn.length} tabung sewa aktif yang belum dikembalikan oleh pelanggan.
+                  {(() => {
+                    const accCount = rentedCylindersForReturn.filter(r => isAccessoryAsset(r.cylinderSerial || '')).length;
+                    const cylCount = rentedCylindersForReturn.length - accCount;
+                    return `⚠️ Terdapat ${rentedCylindersForReturn.length} barang sewa aktif (${cylCount} tabung, ${accCount} aksesoris) yang belum dikembalikan oleh pelanggan.`;
+                  })()}
                 </p>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID Sewa</TableHead>
                       <TableHead>Pelanggan</TableHead>
-                      <TableHead>Tabung Oksigen</TableHead>
+                      <TableHead>Tipe</TableHead>
+                      <TableHead>Barang / Serial</TableHead>
                       <TableHead>Tanggal Pinjam</TableHead>
                       <TableHead>Uang Deposit</TableHead>
                       <TableHead>Status Kontrak</TableHead>
@@ -613,11 +687,19 @@ export default function TransactionsPage() {
                   <TableBody>
                     {rentedCylindersForReturn.map(r => {
                       const cust = customers.find(c => c.id === r.customerId);
+                      const isAcc = isAccessoryAsset(r.cylinderSerial || '');
                       return (
                         <TableRow key={r.id}>
                           <TableCell className="font-bold text-foreground">{r.id}</TableCell>
                           <TableCell>{cust ? cust.name : 'Unknown'}</TableCell>
-                          <TableCell className="font-semibold text-foreground">{r.cylinderId}</TableCell>
+                          <TableCell>
+                            <Badge variant={isAcc ? 'secondary' : 'success'}>
+                              {isAcc ? 'Aksesoris' : 'Tabung'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground">
+                            {r.cylinderSerial || r.cylinderId}
+                          </TableCell>
                           <TableCell>{r.rentDate}</TableCell>
                           <TableCell>{formatRupiah(r.deposit)}</TableCell>
                           <TableCell>
@@ -1022,38 +1104,108 @@ export default function TransactionsPage() {
       {/* ----------------------------------------------------------------- */}
       
       {/* 1. SEWA DRAWER */}
-      <Drawer isOpen={isRentalDrawerOpen} onClose={() => setIsRentalDrawerOpen(false)} title="Buat Kontrak Sewa Tabung">
+      <Drawer
+        isOpen={isRentalDrawerOpen}
+        onClose={() => {
+          setIsRentalDrawerOpen(false);
+          setRentIsNewCustomer(false);
+          setRentNewCustName('');
+          setRentNewCustPhone('');
+          setRentNewCustAddress('');
+        }}
+        title={activeTab === 'accessory-rental' ? "Buat Kontrak Sewa Aksesoris" : "Buat Kontrak Sewa Tabung"}
+      >
         <form onSubmit={handleRentalSubmit} className="space-y-4">
+          {/* Select/Input Customer Toggle */}
+          <div className="space-y-1.5 w-full">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Customer *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setRentIsNewCustomer(!rentIsNewCustomer);
+                  setRentalForm(prev => ({ ...prev, customerId: '' }));
+                  setRentNewCustName('');
+                  setRentNewCustPhone('');
+                  setRentNewCustAddress('');
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+              >
+                {rentIsNewCustomer ? (
+                  <>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Pilih dari Daftar</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>➕ Pelanggan Baru</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            {rentIsNewCustomer ? (
+              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                <Input
+                  label="Nama Lengkap *"
+                  id="rentNewCustName"
+                  placeholder="e.g. Budi Santoso"
+                  value={rentNewCustName}
+                  onChange={e => setRentNewCustName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="WhatsApp / No Telp *"
+                  id="rentNewCustPhone"
+                  placeholder="e.g. 08123456789"
+                  value={rentNewCustPhone}
+                  onChange={e => setRentNewCustPhone(e.target.value)}
+                  required
+                />
+                <Textarea
+                  label="Alamat Lengkap Pengiriman *"
+                  id="rentNewCustAddress"
+                  placeholder="Alamat rumah / lokasi pengiriman tabung..."
+                  value={rentNewCustAddress}
+                  onChange={e => setRentNewCustAddress(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <Select
+                id="drawRentCust"
+                value={rentalForm.customerId}
+                onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
+                options={[
+                  { value: '', label: '-- Pilih Pelanggan --' },
+                  ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                ]}
+              />
+            )}
+          </div>
           <Select
-            label="Pilih Pelanggan *"
-            id="drawRentCust"
-            value={rentalForm.customerId}
-            onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
-            options={[
-              { value: '', label: '-- Pilih Pelanggan --' },
-              ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
-            ]}
-          />
-          <Select
-            label="Pilih Tabung Oksigen Tersedia *"
+            label={activeTab === 'accessory-rental' ? "Pilih Aksesoris *" : "Pilih Tabung Oksigen *"}
             id="drawRentCyl"
             value={rentalForm.cylinderId}
             onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
             options={[
-              { value: '', label: '-- Pilih Tabung Ready --' },
-              ...cylinders.map(c => {
-                let statusLabel = 'Tersedia';
-                if (c.status === 'Rented') statusLabel = 'Sedang Disewa';
-                if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
-                if (c.status === 'Maintenance') statusLabel = 'Perawatan';
-                if (c.status === 'Empty') statusLabel = 'Kosong';
-                
-                return {
-                  value: c.id,
-                  label: `${c.serialNo} (${c.size}) - ${c.oxygenType} - [${statusLabel}]`,
-                  disabled: c.status !== 'Available'
-                };
-              })
+              { value: '', label: activeTab === 'accessory-rental' ? '-- Pilih Aksesoris --' : '-- Pilih Tabung --' },
+              ...cylinders
+                .filter(c => {
+                  const isAcc = isAccessoryAsset(c.serialNo, c.size);
+                  return activeTab === 'accessory-rental' ? isAcc : !isAcc;
+                })
+                .map(c => {
+                  const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
+                  return {
+                    value: c.id,
+                    label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                    disabled: c.status !== 'Available'
+                  };
+                })
             ]}
           />
           <div className="grid grid-cols-2 gap-4">
@@ -1128,7 +1280,7 @@ export default function TransactionsPage() {
       </Drawer>
 
       {/* 2. PENGEMBALIAN DRAWER */}
-      <Drawer isOpen={isReturnDrawerOpen} onClose={() => setIsReturnDrawerOpen(false)} title="Logistik Tabung Kembali">
+      <Drawer isOpen={isReturnDrawerOpen} onClose={() => setIsReturnDrawerOpen(false)} title="Logistik Penerimaan Kembali">
         <form onSubmit={handleReturnSubmit} className="space-y-4">
           <Select
             label="Pilih ID Sewa Aktif *"
@@ -1139,7 +1291,11 @@ export default function TransactionsPage() {
               { value: '', label: '-- Pilih Kontrak Aktif --' },
               ...rentedCylindersForReturn.map(r => {
                 const c = customers.find(cust => cust.id === r.customerId);
-                return { value: r.id, label: `${r.id} - ${c ? c.name : 'Unknown'} (${r.cylinderId})` };
+                const isAcc = isAccessoryAsset(r.cylinderSerial || '');
+                return { 
+                  value: r.id, 
+                  label: `${isAcc ? '[AKSESORIS]' : '[TABUNG]'} ${r.id} - ${c ? c.name : 'Unknown'} (${r.cylinderSerial || r.cylinderId})` 
+                };
               })
             ]}
           />
@@ -1151,13 +1307,18 @@ export default function TransactionsPage() {
             onChange={e => setReturnForm({ ...returnForm, returnDate: e.target.value })}
           />
           <Select
-            label="Kondisi Akhir Tabung Baja *"
+            label={(() => {
+              const selectedRent = rentals.find(r => r.id === returnForm.rentalId);
+              return (selectedRent && isAccessoryAsset(selectedRent.cylinderSerial || ''))
+                ? "Kondisi Akhir Aksesoris *"
+                : "Kondisi Akhir Tabung Baja *";
+            })()}
             id="drawRetCond"
             value={returnForm.condition}
             onChange={e => setReturnForm({ ...returnForm, condition: e.target.value as any })}
             options={[
-              { value: 'Available', label: 'Bagus & Siap Pakai' },
-              { value: 'Maintenance', label: 'Rusak / Butuh hydrotest ulang' }
+              { value: 'Available', label: 'Bagus / Siap Pakai Kembali' },
+              { value: 'Maintenance', label: 'Rusak / Butuh Perbaikan' }
             ]}
           />
           <p className="text-4xs text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border">
@@ -1368,16 +1529,20 @@ export default function TransactionsPage() {
               <tbody>
                 <tr className="border-b">
                   <td className="py-2">
-                    <p className="font-bold">Rental Tabung Oksigen Medis</p>
-                    <p className="text-5xs text-zinc-400">Purity Grade: 99.5% Medical Standard</p>
+                    <p className="font-bold">
+                      {isAccessoryAsset(selectedRental.cylinderSerial || '') ? 'Rental Aksesoris Medis' : 'Rental Tabung Oksigen Medis'}
+                    </p>
+                    <p className="text-5xs text-zinc-400">
+                      {isAccessoryAsset(selectedRental.cylinderSerial || '') ? 'Peralatan & Pendukung Medis' : 'Purity Grade: 99.5% Medical Standard'}
+                    </p>
                   </td>
-                  <td className="py-2 text-center font-mono">{selectedRental.cylinderId}</td>
+                  <td className="py-2 text-center font-mono">{selectedRental.cylinderSerial || selectedRental.cylinderId}</td>
                   <td className="py-2 text-right">{formatRupiah(selectedRental.rentalFee)}</td>
                 </tr>
                 <tr>
                   <td className="py-2" colSpan={2}>
                     <p className="font-bold text-zinc-600">Uang Jaminan Kontrak (Deposit)</p>
-                    <p className="text-5xs text-zinc-400">* Dikembalikan penuh saat tabung kosong kembali ke gudang</p>
+                    <p className="text-5xs text-zinc-400">* Dikembalikan penuh saat barang kembali ke gudang</p>
                   </td>
                   <td className="py-2 text-right font-bold">{formatRupiah(selectedRental.deposit)}</td>
                 </tr>

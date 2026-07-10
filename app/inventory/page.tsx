@@ -106,13 +106,11 @@ export default function InventoryPage() {
   const [customerForm, setCustomerForm] = useState<{
     name: string;
     phone: string;
-    email: string;
     address: string;
     status: 'Active' | 'Inactive';
   }>({
     name: '',
     phone: '',
-    email: '',
     address: '',
     status: 'Active'
   });
@@ -144,7 +142,7 @@ export default function InventoryPage() {
     const today = new Date().toISOString().split('T')[0];
     setCylinderForm({ serialNo: '', size: '1m3', oxygenType: 'Medical', lastInspection: today, status: 'Available' });
     setProductForm({ name: '', category: 'Accessory', stock: '50', cost: '15000', price: '25000', description: '' });
-    setCustomerForm({ name: '', phone: '', email: '', address: '', status: 'Active' });
+    setCustomerForm({ name: '', phone: '', address: '', status: 'Active' });
     setVendorForm({ companyName: '', name: '', phone: '', email: '', address: '', status: 'Active' });
   };
 
@@ -320,7 +318,6 @@ export default function InventoryPage() {
     setCustomerForm({
       name: c.name,
       phone: c.phone,
-      email: c.email,
       address: c.address,
       status: c.status
     });
@@ -591,7 +588,6 @@ export default function InventoryPage() {
                   <TableHead>ID Pelanggan</TableHead>
                   <TableHead>Nama Pelanggan</TableHead>
                   <TableHead>WhatsApp / Telp</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Alamat Pengiriman</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -603,7 +599,6 @@ export default function InventoryPage() {
                     <TableCell className="font-bold text-foreground">{c.id}</TableCell>
                     <TableCell className="font-semibold text-foreground">{c.name}</TableCell>
                     <TableCell>{c.phone}</TableCell>
-                    <TableCell>{c.email}</TableCell>
                     <TableCell className="max-w-[150px] truncate">{c.address}</TableCell>
                     <TableCell>
                       <Badge variant={c.status === 'Active' ? 'success' : 'secondary'}>
@@ -888,13 +883,6 @@ export default function InventoryPage() {
             value={customerForm.phone}
             onChange={e => setCustomerForm({ ...customerForm, phone: e.target.value })}
             required
-          />
-          <Input
-            label="Alamat Email"
-            id="custEmail"
-            placeholder="e.g. dustira@gmail.com"
-            value={customerForm.email}
-            onChange={e => setCustomerForm({ ...customerForm, email: e.target.value })}
           />
           <Textarea
             label="Alamat Lengkap Pengiriman *"

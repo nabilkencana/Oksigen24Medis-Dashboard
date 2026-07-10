@@ -77,7 +77,7 @@ export default function TransactionsPage() {
   const [isRestockDrawerOpen, setIsRestockDrawerOpen] = useState(false);
 
   // Form states
-  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
+  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Tunai', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
   const [rentIsNewCustomer, setRentIsNewCustomer] = useState(false);
   const [rentNewCustName, setRentNewCustName] = useState('');
@@ -94,7 +94,7 @@ export default function TransactionsPage() {
   const [posCart, setPosCart] = useState<Array<{ productId: string; name: string; qty: number; price: number }>>([]);
   const [posProduct, setPosProduct] = useState('');
   const [posQty, setPosQty] = useState('1');
-  const [posPaymentMethod, setPosPaymentMethod] = useState<'Cash' | 'Transfer' | 'E-Wallet'>('Cash');
+  const [posPaymentMethod, setPosPaymentMethod] = useState<'Tunai' | 'Transfer' | 'QRIS'>('Tunai');
   const [posServiceType, setPosServiceType] = useState<'Kios' | 'Antar'>('Kios');
   const [completedSaleInvoice, setCompletedSaleInvoice] = useState<any>(null);
 
@@ -332,11 +332,11 @@ export default function TransactionsPage() {
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
         rentalFee: Number(rentalForm.rentalFee) || 0,
-        paymentMethod: rentalForm.paymentMethod || 'Cash',
+        paymentMethod: rentalForm.paymentMethod || 'Tunai',
         serviceType: rentalForm.serviceType || 'Kios'
       });
       setIsRentalDrawerOpen(false);
-      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Tunai', serviceType: 'Kios' });
       setRentIsNewCustomer(false);
       setRentNewCustName('');
       setRentNewCustPhone('');
@@ -902,9 +902,9 @@ export default function TransactionsPage() {
                   value={posPaymentMethod}
                   onChange={e => setPosPaymentMethod(e.target.value as any)}
                   options={[
-                    { value: 'Cash', label: 'Tunai (Cash)' },
-                    { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
-                    { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+                    { value: 'Tunai', label: 'Tunai' },
+                    { value: 'QRIS', label: 'QRIS' },
+                    { value: 'Transfer', label: 'Transfer' }
                   ]}
                 />
 
@@ -1244,12 +1244,12 @@ export default function TransactionsPage() {
             <Select
               label="Metode Pembayaran *"
               id="drawRentPay"
-              value={rentalForm.paymentMethod || 'Cash'}
+              value={rentalForm.paymentMethod || 'Tunai'}
               onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
               options={[
-                { value: 'Cash', label: 'Tunai (Cash)' },
-                { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
-                { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+                { value: 'Tunai', label: 'Tunai' },
+                { value: 'QRIS', label: 'QRIS' },
+                { value: 'Transfer', label: 'Transfer' }
               ]}
             />
             <Select
@@ -1492,9 +1492,12 @@ export default function TransactionsPage() {
             
             {/* Header */}
             <div className="flex justify-between items-start border-b pb-4">
-              <div>
-                <h3 className="text-sm font-bold tracking-tight">Oksigen Medis 24 Jam</h3>
-                <p className="text-5xs text-zinc-500 mt-0.5">Dusun Sembon, Sembon, Kec. Karangrejo, Tulungagung • Telp: 0858-6697-2209</p>
+              <div className="flex items-center gap-3">
+                <img src="/logo-full-removebg-preview.png" alt="Logo" className="h-10 w-auto object-contain" />
+                <div>
+                  <h3 className="text-sm font-bold tracking-tight">Oksigen Medis 24 Jam</h3>
+                  <p className="text-5xs text-zinc-500 mt-0.5">Dusun Sembon, Sembon, Kec. Karangrejo, Tulungagung • Telp: 0858-6697-2209</p>
+                </div>
               </div>
               <div className="text-right">
                 <span className="text-3xs font-extrabold uppercase bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">INVOICE</span>
@@ -1586,7 +1589,8 @@ export default function TransactionsPage() {
 
             {/* Receipt Details (matches thermal receipt style) */}
             <div className="space-y-3 font-mono text-xs">
-              <div className="text-center">
+              <div className="text-center space-y-1.5">
+                <img src="/logo-full-removebg-preview.png" alt="Logo" className="h-12 w-auto mx-auto object-contain" />
                 <h3 className="font-bold text-sm tracking-tight">Oksigen Medis 24 Jam</h3>
                 <p className="text-[9px] text-zinc-500 mt-0.5">Dusun Sembon, Sembon, Kec. Karangrejo, Tulungagung • Telp: 0858-6697-2209</p>
               </div>

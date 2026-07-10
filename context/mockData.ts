@@ -51,7 +51,7 @@ export interface Rental {
   deposit: number;
   rentalFee: number;
   status: 'Active' | 'Returned' | 'Overdue';
-  paymentMethod?: 'Cash' | 'Transfer' | 'E-Wallet';
+  paymentMethod?: 'Tunai' | 'Transfer' | 'QRIS';
   invoiceNo?: string;
   serviceType?: 'Kios' | 'Antar';
   cylinderDeposit?: number;
@@ -99,7 +99,7 @@ export interface Sale {
   items: Array<{ productId: string; name: string; qty: number; price: number }>;
   totalAmount: number;
   date: string;
-  paymentMethod: 'Cash' | 'Transfer' | 'E-Wallet';
+  paymentMethod: 'Tunai' | 'Transfer' | 'QRIS';
   status: 'Paid' | 'Unpaid';
   invoiceNo?: string;
   serviceType?: 'Kios' | 'Antar';
@@ -480,7 +480,7 @@ export function generateInitialData() {
       { productId: p2.id, name: p2.name, qty: qty2, price: p2.price }
     ];
     const totalAmount = (qty1 * p1.price) + (qty2 * p2.price);
-    const paymentMethods: ('Cash' | 'Transfer' | 'E-Wallet')[] = ['Cash', 'Transfer', 'E-Wallet'];
+    const paymentMethods: ('Tunai' | 'Transfer' | 'QRIS')[] = ['Tunai', 'Transfer', 'QRIS'];
     const paymentMethod = getRandomItem(paymentMethods);
 
     sales.push({

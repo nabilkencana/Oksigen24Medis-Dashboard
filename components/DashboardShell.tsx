@@ -67,7 +67,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  
+
   // Collapsed submenus state
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     'Data Master': true,
@@ -112,12 +112,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const userRole = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
 
   const allMenuItems = [
-    { name: 'Dashboard',   href: '/',             icon: LayoutDashboard, roles: null },
-    { name: 'Transaksi',   href: '/transactions', icon: ArrowRightLeft,  roles: ['OWNER', 'ADMIN', 'WAREHOUSE', 'FINANCE'] },
-    { name: 'Inventaris',  href: '/inventory',    icon: Database,        roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
-    { name: 'Keuangan',    href: '/finance',      icon: DollarSign,      roles: ['OWNER', 'ADMIN', 'FINANCE'] },
-    { name: 'Laporan',     href: '/reports',      icon: TrendingUp,      roles: ['OWNER', 'ADMIN', 'FINANCE'] },
-    { name: 'Pengaturan',  href: '/settings',     icon: Settings,        roles: ['OWNER', 'ADMIN'] },
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: null },
+    { name: 'Transaksi', href: '/transactions', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'WAREHOUSE', 'FINANCE'] },
+    { name: 'Inventaris', href: '/inventory', icon: Database, roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+    { name: 'Keuangan', href: '/finance', icon: DollarSign, roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+    { name: 'Laporan', href: '/reports', icon: TrendingUp, roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+    { name: 'Pengaturan', href: '/settings', icon: Settings, roles: ['OWNER', 'ADMIN'] },
   ];
 
   const menuStructure: SidebarGroup[] = [
@@ -132,7 +132,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   // Breadcrumbs generator
   const getBreadcrumbs = () => {
     if (pathname === '/') return ['Dashboard'];
-    
+
     // Find matching link
     for (const group of menuStructure) {
       for (const item of group.items) {
@@ -150,7 +150,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const getSearchResults = () => {
     if (!searchQuery) return [];
     const query = searchQuery.toLowerCase();
-    
+
     const matchedCustomers = customers
       .filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
       .slice(0, 3)
@@ -196,13 +196,13 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      
+
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card text-card-foreground shrink-0 select-none">
-        
+
         {/* Sidebar Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-border/60">
-          <img src="/website-logo.png" alt="Website Logo" className="h-9 object-contain" />
+        <div className="h-18 flex items-center px-6 border-b border-border/60">
+          <img src="/logo-full-removebg-preview.png" alt="Website Logo" className="h-20 object-contain" />
         </div>
 
         {/* Sidebar Links */}
@@ -219,11 +219,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                     <Link
                       key={itemIndex}
                       href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all group ${
-                        isActive
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all group ${isActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                        }`}
                     >
                       <item.icon className={`w-4 h-4 shrink-0 transition-transform ${isActive ? '' : 'group-hover:scale-110'}`} />
                       <span className="truncate">{item.name}</span>
@@ -261,10 +260,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
       {/* Main Content Layout */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        
+
         {/* Top Navbar */}
         <header className="h-16 flex items-center justify-between border-b border-border/60 bg-card px-4 lg:px-6 select-none shrink-0 z-40">
-          
+
           {/* Left Navigation Details */}
           <div className="flex items-center gap-4">
             <button
@@ -292,7 +291,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
           {/* Right Navigation Details */}
           <div className="flex items-center gap-3">
-            
+
             {/* Search Trigger */}
             <button
               onClick={() => setIsSearchOpen(true)}
@@ -408,7 +407,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-6 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  <img src="/website-logo.png" alt="Website Logo" className="h-8 w-8 object-contain" />
+                  <img src="/logo-full-removebg-preview.png" alt="Website Logo" className="h-8 w-8 object-contain" />
                   <h1 className="font-bold text-sm text-foreground">Oksigen24Medis</h1>
                 </div>
                 <button
@@ -434,11 +433,10 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                             key={itemIndex}
                             href={item.href}
                             onClick={() => setIsMobileOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                              isActive
-                                ? 'bg-primary text-primary-foreground'
-                                : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
-                            }`}
+                            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all ${isActive
+                              ? 'bg-primary text-primary-foreground'
+                              : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                              }`}
                           >
                             <item.icon className="w-4 h-4 shrink-0" />
                             <span className="truncate">{item.name}</span>
@@ -542,12 +540,12 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                         <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Pintasan Cepat</h4>
                         <div className="grid grid-cols-2 gap-2">
                           {[
-                            { label: 'Sewa Tabung Oksigen',  href: '/transactions?tab=rental',   icon: <Clock className="w-3.5 h-3.5 text-emerald-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
-                            { label: 'Kembalikan Tabung',    href: '/transactions?tab=return',    icon: <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
-                            { label: 'Isi Ulang Gas (Refill)',href: '/transactions?tab=refill',   icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
-                            { label: 'POS Kasir Ritel',      href: '/transactions?tab=sales',    icon: <ShoppingCart className="w-3.5 h-3.5 text-purple-500" />, roles: ['OWNER','ADMIN','FINANCE'] },
-                            { label: 'Beli Restock Baru',    href: '/transactions?tab=restock',  icon: <Package className="w-3.5 h-3.5 text-teal-500" />, roles: ['OWNER','ADMIN','WAREHOUSE'] },
-                            { label: 'Catat Kas Keluar',     href: '/finance?tab=expenses',      icon: <FileText className="w-3.5 h-3.5 text-rose-500" />, roles: ['OWNER','ADMIN','FINANCE'] },
+                            { label: 'Sewa Tabung Oksigen', href: '/transactions?tab=rental', icon: <Clock className="w-3.5 h-3.5 text-emerald-500" />, roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+                            { label: 'Kembalikan Tabung', href: '/transactions?tab=return', icon: <ArrowRightLeft className="w-3.5 h-3.5 text-orange-500" />, roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+                            { label: 'Isi Ulang Gas (Refill)', href: '/transactions?tab=refill', icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />, roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+                            { label: 'POS Kasir Ritel', href: '/transactions?tab=sales', icon: <ShoppingCart className="w-3.5 h-3.5 text-purple-500" />, roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+                            { label: 'Beli Restock Baru', href: '/transactions?tab=restock', icon: <Package className="w-3.5 h-3.5 text-teal-500" />, roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+                            { label: 'Catat Kas Keluar', href: '/finance?tab=expenses', icon: <FileText className="w-3.5 h-3.5 text-rose-500" />, roles: ['OWNER', 'ADMIN', 'FINANCE'] },
                           ]
                             .filter(s => !s.roles || s.roles.includes(userRole))
                             .map(s => (

@@ -55,14 +55,14 @@ export default function Home() {
 
   // Drawer states
   const [activeDrawer, setActiveDrawer] = useState<'rental' | 'accessory-rental' | 'refill' | 'sale' | 'expense' | null>(null);
-  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' as 'Kios' | 'Antar' });
+  const [rentalForm, setRentalForm] = useState({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Tunai', serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [isSaving, setIsSaving] = useState(false);
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [newCustName, setNewCustName] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
-  const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash' as const, serviceType: 'Kios' as 'Kios' | 'Antar' });
+  const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Tunai' as const, serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [expenseForm, setExpenseForm] = useState({ category: 'Operational' as const, description: '', amount: '', date: '' });
 
   // Greetings helper
@@ -196,11 +196,11 @@ export default function Home() {
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
         rentalFee: Number(rentalForm.rentalFee) || 0,
-        paymentMethod: rentalForm.paymentMethod || 'Cash',
-        serviceType: rentalForm.serviceType || 'Kios'
+        paymentMethod: rentalForm.paymentMethod || 'Tunai',
+        serviceType: rentalForm.serviceType
       });
       setActiveDrawer(null);
-      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Cash', serviceType: 'Kios' });
+      setRentalForm({ customerId: '', cylinderId: '', rentDate: '', returnDate: '', deposit: '', rentalFee: '', paymentMethod: 'Tunai', serviceType: 'Kios' });
       setIsNewCustomer(false);
       setNewCustName('');
       setNewCustPhone('');
@@ -259,7 +259,7 @@ export default function Home() {
         serviceType: saleForm.serviceType || 'Kios'
       });
       setActiveDrawer(null);
-      setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Cash', serviceType: 'Kios' });
+      setSaleForm({ customerId: '', productId: '', qty: '1', paymentMethod: 'Tunai', serviceType: 'Kios' });
     } catch (err: any) {
       alert(err.message || 'Gagal menyimpan penjualan.');
     } finally {
@@ -678,12 +678,12 @@ export default function Home() {
             <Select
               label="Metode Pembayaran *"
               id="rentPayMethod"
-              value={rentalForm.paymentMethod || 'Cash'}
+              value={rentalForm.paymentMethod || 'Tunai'}
               onChange={e => setRentalForm({ ...rentalForm, paymentMethod: e.target.value as any })}
               options={[
-                { value: 'Cash', label: 'Tunai (Cash)' },
-                { value: 'Transfer', label: 'Transfer Bank (BCA/Mandiri)' },
-                { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+                { value: 'Tunai', label: 'Tunai' },
+                { value: 'QRIS', label: 'QRIS' },
+                { value: 'Transfer', label: 'Transfer' }
               ]}
             />
             <Select
@@ -818,9 +818,9 @@ export default function Home() {
               value={saleForm.paymentMethod}
               onChange={e => setSaleForm({ ...saleForm, paymentMethod: e.target.value as any })}
               options={[
-                { value: 'Cash', label: 'Tunai (Cash)' },
-                { value: 'Transfer', label: 'Transfer Bank' },
-                { value: 'E-Wallet', label: 'E-Wallet (GoPay/OVO)' }
+                { value: 'Tunai', label: 'Tunai' },
+                { value: 'QRIS', label: 'QRIS' },
+                { value: 'Transfer', label: 'Transfer' }
               ]}
             />
           </div>

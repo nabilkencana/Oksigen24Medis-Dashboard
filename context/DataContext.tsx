@@ -272,12 +272,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        let paymentMethodVal: 'Cash' | 'Transfer' | 'E-Wallet' = 'Cash';
+        let paymentMethodVal: 'Tunai' | 'Transfer' | 'QRIS' = 'Tunai';
         if (r.notes && r.notes.includes('[PAYMENT:')) {
           const match = r.notes.match(/\[PAYMENT:\s*([^\]]+)\]/);
           if (match) {
             const pm = match[1].trim().toUpperCase();
-            paymentMethodVal = pm === 'TRANSFER' ? 'Transfer' : pm === 'E_WALLET' ? 'E-Wallet' : 'Cash';
+            paymentMethodVal = pm === 'TRANSFER' ? 'Transfer' : (pm === 'QRIS' || pm === 'E_WALLET') ? 'QRIS' : 'Tunai';
           }
         }
 
@@ -384,7 +384,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }
           rawPm = rawPm.split('[SERVICE:')[0].trim();
         }
-        const cleanPm = rawPm.toUpperCase() === 'TRANSFER' ? 'Transfer' : rawPm.toUpperCase() === 'E_WALLET' ? 'E-Wallet' : 'Cash';
+        const cleanPm = rawPm.toUpperCase() === 'TRANSFER' ? 'Transfer' : (rawPm.toUpperCase() === 'QRIS' || rawPm.toUpperCase() === 'E_WALLET') ? 'QRIS' : 'Tunai';
 
         return {
           id: s.id,
@@ -867,7 +867,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const createSale = async (sale: any) => {
     const sType = (sale.serviceType || 'Kios').toUpperCase();
-    const rawPm = sale.paymentMethod.toUpperCase() === 'E-WALLET' ? 'E_WALLET' : sale.paymentMethod.toUpperCase();
+    const upperPm = (sale.paymentMethod || 'TUNAI').toUpperCase();
+    const rawPm = upperPm === 'TUNAI' || upperPm === 'CASH' ? 'TUNAI' : upperPm === 'TRANSFER' ? 'TRANSFER' : 'QRIS';
     const pmPayload = `${rawPm} [SERVICE: ${sType}]`;
 
     const res = await fetchApi('/transactions/sales', {
@@ -898,7 +899,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return {
       id: res.id,
       customerId: res.customerId || '',
-      paymentMethod: res.paymentMethod === 'E_WALLET' ? 'E-Wallet' : res.paymentMethod,
+      paymentMethod: (res.paymentMethod === 'E_WALLET' || res.paymentMethod === 'QRIS') ? 'QRIS' : (res.paymentMethod === 'TRANSFER' ? 'Transfer' : 'Tunai'),
       amount: Number(res.totalAmount) || 0,
       date: new Date(res.createdAt).toISOString().split('T')[0],
       items: mappedItems

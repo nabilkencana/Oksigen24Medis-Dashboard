@@ -10,7 +10,7 @@ import { Input, Select, Textarea } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { Drawer } from '../../components/ui/Drawer';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '../../components/ui/Table';
-import { Plus, Search, Eye, RefreshCw, Printer, Calendar, FileText, ChevronRight, X, ShoppingCart, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Eye, RefreshCw, Printer, Calendar, FileText, ChevronRight, X, ShoppingCart, Trash2, CheckCircle2, UserPlus, Database } from 'lucide-react';
 
 type TabType = 'rental' | 'return' | 'sales' | 'restock' | 'refill';
 
@@ -28,6 +28,7 @@ export default function TransactionsPage() {
     rentals,
     refills,
     transactions,
+    addCustomer,
     createRental,
     returnRental,
     sendToRefill,
@@ -78,6 +79,8 @@ export default function TransactionsPage() {
   
   // POS Cart State
   const [posCustomer, setPosCustomer] = useState('');
+  const [posCustomerMode, setPosCustomerMode] = useState<'select' | 'input'>('select');
+  const [posCustomerName, setPosCustomerName] = useState('');
   const [posCart, setPosCart] = useState<Array<{ productId: string; name: string; qty: number; price: number }>>([]);
   const [posProduct, setPosProduct] = useState('');
   const [posQty, setPosQty] = useState('1');
@@ -163,15 +166,36 @@ export default function TransactionsPage() {
   }, [posCart]);
 
   const handleCheckoutPOS = async () => {
-    if (!posCustomer || posCart.length === 0) {
-      alert('Harap pilih pelanggan dan tambahkan produk ke keranjang.');
+    if (posCart.length === 0) {
+      alert('Harap tambahkan produk ke keranjang.');
       return;
     }
 
     setIsSaving(true);
     try {
+      let finalCustomerId = undefined;
+
+      if (posCustomerMode === 'select') {
+        if (posCustomer) {
+          finalCustomerId = posCustomer;
+        }
+      } else if (posCustomerMode === 'input') {
+        const trimmedName = posCustomerName.trim();
+        if (trimmedName) {
+          // Check if customer already exists (case-insensitive) to prevent duplicates
+          const existing = customers.find(c => c.name.toLowerCase() === trimmedName.toLowerCase());
+          if (existing) {
+            finalCustomerId = existing.id;
+          } else {
+            // Create new customer on the fly
+            const newCust = await addCustomer({ name: trimmedName });
+            finalCustomerId = newCust.id;
+          }
+        }
+      }
+
       const sale = await createSale({
-        customerId: posCustomer,
+        customerId: finalCustomerId,
         items: posCart,
         date: new Date().toISOString().split('T')[0],
         paymentMethod: posPaymentMethod,
@@ -181,6 +205,8 @@ export default function TransactionsPage() {
       setCompletedSaleInvoice(sale);
       setPosCart([]);
       setPosCustomer('');
+      setPosCustomerName('');
+      setPosCustomerMode('select');
       setPosServiceType('Kios');
     } catch (err: any) {
       alert(err.message || 'Gagal memproses transaksi.');
@@ -646,17 +672,54 @@ export default function TransactionsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 
-                {/* Select Customer */}
-                <Select
-                  label="Pilih Pelanggan POS *"
-                  id="posCust"
-                  value={posCustomer}
-                  onChange={e => setPosCustomer(e.target.value)}
-                  options={[
-                    { value: '', label: '-- Pilih Pelanggan Ritel --' },
-                    ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
-                  ]}
-                />
+                {/* Select/Input Customer */}
+                <div className="space-y-1.5 w-full">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Pelanggan POS
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPosCustomerMode(posCustomerMode === 'select' ? 'input' : 'select');
+                        setPosCustomer('');
+                        setPosCustomerName('');
+                      }}
+                      className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+                    >
+                      {posCustomerMode === 'select' ? (
+                        <>
+                          <UserPlus className="w-3.5 h-3.5" />
+                          <span>Ketik Nama Manual</span>
+                        </>
+                      ) : (
+                        <>
+                          <Database className="w-3.5 h-3.5" />
+                          <span>Pilih dari Daftar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  
+                  {posCustomerMode === 'select' ? (
+                    <Select
+                      id="posCust"
+                      value={posCustomer}
+                      onChange={e => setPosCustomer(e.target.value)}
+                      options={[
+                        { value: '', label: '-- Pilih Pelanggan Ritel --' },
+                        ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                      ]}
+                    />
+                  ) : (
+                    <Input
+                      id="posCustName"
+                      placeholder="Masukkan nama pelanggan baru / ritel..."
+                      value={posCustomerName}
+                      onChange={e => setPosCustomerName(e.target.value)}
+                    />
+                  )}
+                </div>
 
                 {/* Select Product Item */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end border-t border-border pt-4">
@@ -776,7 +839,7 @@ export default function TransactionsPage() {
 
                 <Button
                   className="w-full mt-4 flex items-center justify-center gap-1.5"
-                  disabled={posCart.length === 0 || !posCustomer || isSaving}
+                  disabled={posCart.length === 0 || isSaving}
                   onClick={handleCheckoutPOS}
                 >
                   {isSaving ? (

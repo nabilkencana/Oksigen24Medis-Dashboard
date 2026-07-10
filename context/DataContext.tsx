@@ -34,7 +34,7 @@ interface DataContextType {
   user: any | null;
   logout: () => void;
   // CRUD actions
-  addCustomer: (cust: Omit<Customer, 'id' | 'joinedDate' | 'balance'> & { balance?: number }) => Promise<void>;
+  addCustomer: (cust: Partial<Omit<Customer, 'id' | 'joinedDate' | 'balance'>> & { name: string; balance?: number }) => Promise<any>;
   updateCustomer: (id: string, cust: Partial<Customer>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
   addVendor: (vend: Omit<Vendor, 'id'>) => Promise<void>;
@@ -524,7 +524,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // CRUD API Integrations
   const addCustomer = async (cust: any) => {
-    await fetchApi('/inventory/customers', {
+    const res = await fetchApi('/inventory/customers', {
       method: 'POST',
       body: JSON.stringify({
         name: cust.name,
@@ -534,6 +534,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
     });
     await refreshAllData();
+    return res;
   };
 
   const updateCustomer = async (id: string, cust: any) => {

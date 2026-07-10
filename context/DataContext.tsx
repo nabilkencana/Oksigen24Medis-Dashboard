@@ -515,6 +515,55 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+
+    let socket: WebSocket | null = null;
+    let reconnectTimeout: any = null;
+
+    const connect = () => {
+      console.log('[WS] Connecting to real-time events...');
+      socket = new WebSocket('ws://localhost:3000');
+
+      socket.onopen = () => {
+        console.log('[WS] Connected to Realtime Gateway successfully');
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.event === 'db_change') {
+            console.log('[WS] DB Change detected:', msg.payload);
+            refreshAllData();
+          }
+        } catch (e) {
+          console.error('[WS] Failed to parse message:', e);
+        }
+      };
+
+      socket.onerror = (err) => {
+        console.error('[WS] WebSocket Error:', err);
+      };
+
+      socket.onclose = () => {
+        console.log('[WS] Connection closed. Reconnecting in 5 seconds...');
+        reconnectTimeout = setTimeout(connect, 5000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      if (socket) {
+        socket.onclose = null;
+        socket.close();
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, [token]);
+
   const handleLoginSuccess = (loggedInUser: any, tokens: { accessToken: string; refreshToken: string }) => {
     localStorage.setItem('oksigen24_access_token', tokens.accessToken);
     localStorage.setItem('oksigen24_refresh_token', tokens.refreshToken);

@@ -138,7 +138,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('oksigen24_refresh_token');
       localStorage.removeItem('oksigen24_user');
     }
-    
+
     const savedTheme = localStorage.getItem('oksigen24_theme') as 'light' | 'dark';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -148,7 +148,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    
+
     setIsClientLoaded(true);
   }, []);
 
@@ -182,7 +182,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })();
     const roleName = String(currentUser?.role?.name || currentUser?.role || 'OWNER').toUpperCase();
     const isOwnerOrAdmin = roleName === 'OWNER' || roleName === 'ADMIN';
-    const isFinance   = roleName === 'FINANCE';
+    const isFinance = roleName === 'FINANCE';
     const isWarehouse = roleName === 'WAREHOUSE';
 
     // FINANCE can't access: vendors, cylinders, rentals, purchases, stock-movements
@@ -374,36 +374,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: p.status === 'PAID' ? 'Completed' : 'Pending'
       }));
 
-        const mappedSales: Sale[] = ((salesData?.items) || []).map((s: any) => {
-          let rawPm = s.paymentMethod || 'CASH';
-          let serviceTypeVal: 'Kios' | 'Antar' = 'Kios';
-          if (rawPm.includes('[SERVICE:')) {
-            const match = rawPm.match(/\[SERVICE:\s*([^\]]+)\]/);
-            if (match) {
-              serviceTypeVal = match[1].trim().toUpperCase() === 'ANTAR' ? 'Antar' : 'Kios';
-            }
-            rawPm = rawPm.split('[SERVICE:')[0].trim();
+      const mappedSales: Sale[] = ((salesData?.items) || []).map((s: any) => {
+        let rawPm = s.paymentMethod || 'CASH';
+        let serviceTypeVal: 'Kios' | 'Antar' = 'Kios';
+        if (rawPm.includes('[SERVICE:')) {
+          const match = rawPm.match(/\[SERVICE:\s*([^\]]+)\]/);
+          if (match) {
+            serviceTypeVal = match[1].trim().toUpperCase() === 'ANTAR' ? 'Antar' : 'Kios';
           }
-          const cleanPm = rawPm.toUpperCase() === 'TRANSFER' ? 'Transfer' : rawPm.toUpperCase() === 'E_WALLET' ? 'E-Wallet' : 'Cash';
+          rawPm = rawPm.split('[SERVICE:')[0].trim();
+        }
+        const cleanPm = rawPm.toUpperCase() === 'TRANSFER' ? 'Transfer' : rawPm.toUpperCase() === 'E_WALLET' ? 'E-Wallet' : 'Cash';
 
-          return {
-            id: s.id,
-            customerId: s.customerId || '',
-            customerName: s.customer?.name || 'Umum',
-            items: (s.items || []).map((i: any) => ({
-              productId: i.productId,
-              name: i.product?.name || 'Product',
-              qty: i.quantity,
-              price: Number(i.unitPrice) || 0
-            })),
-            totalAmount: Number(s.totalAmount) || 0,
-            date: new Date(s.createdAt).toISOString().split('T')[0],
-            paymentMethod: cleanPm,
-            status: s.status === 'PAID' ? 'Paid' : 'Unpaid',
-            invoiceNo: s.invoiceNo,
-            serviceType: serviceTypeVal
-          };
-        });
+        return {
+          id: s.id,
+          customerId: s.customerId || '',
+          customerName: s.customer?.name || 'Umum',
+          items: (s.items || []).map((i: any) => ({
+            productId: i.productId,
+            name: i.product?.name || 'Product',
+            qty: i.quantity,
+            price: Number(i.unitPrice) || 0
+          })),
+          totalAmount: Number(s.totalAmount) || 0,
+          date: new Date(s.createdAt).toISOString().split('T')[0],
+          paymentMethod: cleanPm,
+          status: s.status === 'PAID' ? 'Paid' : 'Unpaid',
+          invoiceNo: s.invoiceNo,
+          serviceType: serviceTypeVal
+        };
+      });
 
       const mappedExpenses: Expense[] = ((expensesData?.items) || []).map((e: any) => {
         let desc = e.description || '';
@@ -685,7 +685,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateCylinder = async (id: string, cyl: any) => {
     const ot = oxygenTypes.find(t => t.name === cyl.oxygenType);
     const payload: any = {};
-    
+
     if (cyl.serialNo !== undefined) payload.serialNumber = cyl.serialNo;
     if (cyl.size !== undefined) payload.size = cyl.size;
     if (cyl.status !== undefined) {
@@ -741,7 +741,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       );
     }
     const payload: any = {};
-    
+
     if (prod.name !== undefined) payload.name = prod.name;
     if (prod.description !== undefined) payload.description = prod.description || '';
     if (prod.price !== undefined) payload.price = Number(prod.price);
@@ -768,7 +768,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const depositAmount = Number(rentalData.deposit) || 0;
     const payMethod = (rentalData.paymentMethod || 'CASH').toUpperCase();
     const sType = (rentalData.serviceType || 'Kios').toUpperCase();
-    
+
     let notesPayload = `[DEPOSIT: ${depositAmount}] [PAYMENT: ${payMethod}] [SERVICE: ${sType}]`;
     if (rentalData.accessories && rentalData.accessories.length > 0) {
       const accStr = rentalData.accessories.map((a: any) => `${a.name}(${a.qty})|fee:${a.fee}|dep:${a.deposit}`).join(';');
@@ -822,7 +822,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       method: 'PATCH',
       body: JSON.stringify({ status: 'EMPTY' })
     });
-    
+
     await fetchApi('/transactions/refills/send', {
       method: 'POST',
       body: JSON.stringify({

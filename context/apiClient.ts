@@ -1,4 +1,4 @@
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://oksigen24-medis-backend.vercel.app';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.oksigen24medis.com';
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<any> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('oksigen24_access_token') : null;

@@ -16,7 +16,7 @@ type TabType = 'users' | 'roles' | 'profile';
 export default function SettingsPage() {
   const getIndonesianRole = (role: string) => {
     const r = String(role).toUpperCase();
-    if (r === 'OWNER') return 'Owner';
+    if (r === 'OWNER') return 'Pemilik Bisnis (Owner)';
     if (r === 'ADMIN') return 'Admin';
     if (r === 'FINANCE') return 'Keuangan';
     if (r === 'WAREHOUSE') return 'Staf Gudang';

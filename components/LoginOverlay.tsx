@@ -10,10 +10,10 @@ interface LoginOverlayProps {
 }
 
 const SEED_ACCOUNTS = [
-  { email: 'admin@medis24.com', label: 'Administrator', role: 'ADMIN', desc: 'Manage operations', icon: ShieldCheck },
-  { email: 'owner@medis24.com', label: 'Owner / Owner', role: 'OWNER', desc: 'Full business overview', icon: Activity },
-  { email: 'finance@medis24.com', label: 'Finance Specialist', role: 'FINANCE', desc: 'Billing & expenses', icon: FileText },
-  { email: 'warehouse@medis24.com', label: 'Warehouse Operator', role: 'WAREHOUSE', desc: 'Stocks & cylinders', icon: Package },
+  { email: 'admin@medis24.com', label: 'Administrator', role: 'ADMIN', desc: 'Kelola operasional harian', icon: ShieldCheck },
+  { email: 'owner@medis24.com', label: 'Pemilik Bisnis (Owner)', role: 'OWNER', desc: 'Ikhtisar bisnis menyeluruh', icon: Activity },
+  { email: 'finance@medis24.com', label: 'Staf Keuangan', role: 'FINANCE', desc: 'Transaksi kasir & pengeluaran kas', icon: FileText },
+  { email: 'warehouse@medis24.com', label: 'Staf Gudang', role: 'WAREHOUSE', desc: 'Stok retail & logistik tabung', icon: Package },
 ];
 
 export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
@@ -98,7 +98,7 @@ export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
         <div className="flex-1 p-8 sm:p-10 bg-muted/20 dark:bg-muted/10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border transition-colors duration-300">
           <div>
             <div className="flex items-center gap-3.5">
-              <img src="/24hours-logo.jpg" alt="Website Logo" className="h-9 w-9 object-contain" />
+              <img src="/logo-removebg-preview.png" alt="Website Logo" className="h-9 w-9 object-contain" />
               <div>
                 <h1 className="font-bold text-sm leading-tight text-foreground">Oksigen Medis 24 Jam</h1>
                 <p className="text-3xs text-muted-foreground font-semibold uppercase tracking-wider">ERP SYSTEM v1.0</p>

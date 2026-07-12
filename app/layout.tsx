@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Oksigen Medis 24 Jam | ERP Dashboard",
   description: "ERP-style Oxygen Rental and Cylinder Inventory Management System Dashboard",
+  icons: {
+    icon: "/logo-removebg-preview.png",
+  },
 };
 
 export default function RootLayout({

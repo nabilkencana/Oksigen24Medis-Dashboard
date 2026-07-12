@@ -55,7 +55,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     if (!usr) return 'Admin';
     const roleVal = usr.role?.name || usr.role || 'ADMIN';
     const r = String(roleVal).toUpperCase();
-    if (r === 'OWNER') return 'Owner';
+    if (r === 'OWNER') return 'Pemilik Bisnis (Owner)';
     if (r === 'ADMIN') return 'Admin';
     if (r === 'FINANCE') return 'Keuangan';
     if (r === 'WAREHOUSE') return 'Staf Gudang';

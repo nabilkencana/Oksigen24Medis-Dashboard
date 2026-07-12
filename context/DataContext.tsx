@@ -139,10 +139,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         setUser(null);
       }
+      
+      // Load cached ERP data to allow instant rendering without full screen loader
+      const savedData = localStorage.getItem('oksigen24_cached_data');
+      if (savedData) {
+        try {
+          setData(JSON.parse(savedData));
+        } catch (e) {
+          console.error('Failed to parse cached ERP data:', e);
+        }
+      }
     } else {
       localStorage.removeItem('oksigen24_access_token');
       localStorage.removeItem('oksigen24_refresh_token');
       localStorage.removeItem('oksigen24_user');
+      localStorage.removeItem('oksigen24_cached_data');
     }
 
     const savedTheme = localStorage.getItem('oksigen24_theme') as 'light' | 'dark';
@@ -164,6 +175,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setToken(null);
       setUser(null);
       setData(null);
+      localStorage.removeItem('oksigen24_cached_data');
     };
     window.addEventListener('auth-logout', handleLogout);
     return () => window.removeEventListener('auth-logout', handleLogout);
@@ -505,7 +517,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         status: u.isActive ? 'Active' : 'Inactive',
       }));
 
-      setData({
+      const nextData = {
         customers: mappedCustomers,
         vendors: mappedVendors,
         cylinders: mappedCylinders,
@@ -518,7 +530,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         expenses: mappedExpenses,
         transactions: allTransactions,
         users: mappedUsers
-      });
+      };
+      
+      setData(nextData);
+      try {
+        localStorage.setItem('oksigen24_cached_data', JSON.stringify(nextData));
+      } catch (e) {
+        console.error('Failed to cache live ERP data:', e);
+      }
     } catch (e) {
       console.error('Failed to load live ERP data:', e);
     } finally {
@@ -601,6 +620,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('oksigen24_access_token');
     localStorage.removeItem('oksigen24_refresh_token');
     localStorage.removeItem('oksigen24_user');
+    localStorage.removeItem('oksigen24_cached_data');
     setToken(null);
     setUser(null);
     setData(null);

@@ -342,6 +342,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           customerName: r.customer?.name || 'Unknown',
           cylinderId: r.items?.[0]?.cylinder?.id || '',
           cylinderSerial: r.items?.[0]?.cylinder?.serialNumber || '',
+          cylinderSize: cylSize,
           rentDate: new Date(r.createdAt).toISOString().split('T')[0],
           returnDate: new Date(r.dueDate).toISOString().split('T')[0],
           actualReturnDate: r.returnDate ? new Date(r.returnDate).toISOString().split('T')[0] : undefined,
@@ -547,6 +548,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshAllDataWithDelay = (delayMs = 1200) => {
+    setTimeout(() => {
+      refreshAllData().catch(err => console.error("Error refreshing data:", err));
+    }, delayMs);
+  };
+
   useEffect(() => {
     if (token) {
       refreshAllData();
@@ -716,7 +723,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!ot) {
       throw new Error('Grade/tipe kandungan gas belum dimuat atau kosong di database. Silakan muat ulang halaman.');
     }
-    await fetchApi('/inventory/cylinders', {
+    const res = await fetchApi('/inventory/cylinders', {
       method: 'POST',
       body: JSON.stringify({
         serialNumber: cyl.serialNo,
@@ -726,7 +733,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         oxygenTypeId: ot.id
       })
     });
-    await refreshAllData();
+
+    const newCylMapped: Cylinder = {
+      id: res.id || `temp-${Date.now()}`,
+      serialNo: res.serialNumber || cyl.serialNo,
+      oxygenType: res.oxygenType?.name || ot.name || cyl.oxygenType || 'Medical Oxygen 99.5%',
+      size: res.size || cyl.size,
+      status: mapCylinderStatusToFrontend(res.status || cyl.status),
+      lastInspection: new Date().toISOString().split('T')[0]
+    };
+
+    setData(prev => {
+      if (!prev) return prev;
+      if (prev.cylinders.some(c => c.id === newCylMapped.id || c.serialNo === newCylMapped.serialNo)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        cylinders: [newCylMapped, ...prev.cylinders]
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const updateCylinder = async (id: string, cyl: any) => {
@@ -741,18 +769,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (ot) payload.oxygenTypeId = ot.id;
     if (cyl.capacity !== undefined) payload.capacity = Number(cyl.capacity);
 
-    await fetchApi(`/inventory/cylinders/${id}`, {
+    const res = await fetchApi(`/inventory/cylinders/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload)
     });
-    await refreshAllData();
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        cylinders: prev.cylinders.map(c => {
+          if (c.id === id) {
+            return {
+              ...c,
+              serialNo: res.serialNumber || c.serialNo,
+              oxygenType: res.oxygenType?.name || ot?.name || c.oxygenType,
+              size: res.size || c.size,
+              status: mapCylinderStatusToFrontend(res.status || c.status),
+            };
+          }
+          return c;
+        })
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const deleteCylinder = async (id: string) => {
     await fetchApi(`/inventory/cylinders/${id}`, {
       method: 'DELETE'
     });
-    await refreshAllData();
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        cylinders: prev.cylinders.filter(c => c.id !== id)
+      };
+    });
+    refreshAllDataWithDelay();
   };
 
   const addOxygenType = async (ot: { name: string; purity: number; pricePerUnit: number; description?: string }) => {
@@ -765,7 +820,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         description: ot.description || ''
       })
     });
-    await refreshAllData();
+    setOxygenTypes(prev => [...prev, res]);
+    refreshAllDataWithDelay();
     return res;
   };
 
@@ -775,6 +831,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       (prod.category === 'Peralatan' && c.name.toLowerCase().includes('regulator')) ||
       (prod.category === 'Aksesoris' && c.name.toLowerCase().includes('consumable'))
     ) || categories[0];
+
+    if (!matchedCategory) {
+      throw new Error('Kategori produk belum dimuat atau kosong di database. Silakan muat ulang halaman.');
+    }
 
     await fetchApi('/inventory/products', {
       method: 'POST',
@@ -786,7 +846,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         cost: Number(prod.cost),
         currentStock: Number(prod.stock) || 0,
         minStock: 5,
-        categoryId: matchedCategory?.id
+        categoryId: matchedCategory.id
       })
     });
     await refreshAllData();
@@ -837,18 +897,70 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     const totalAccFees = rentalData.accessories?.reduce((sum: number, a: any) => sum + (a.fee * a.qty), 0) || 0;
+    const rentFeeVal = (Number(rentalData.rentalFee) || 0) + totalAccFees;
 
-    await fetchApi('/transactions/rentals', {
+    const res = await fetchApi('/transactions/rentals', {
       method: 'POST',
       body: JSON.stringify({
         customerId: rentalData.customerId,
         dueDate: new Date(rentalData.returnDate).toISOString(),
         cylinderIds: [rentalData.cylinderId],
-        amountPaid: (Number(rentalData.rentalFee) || 0) + totalAccFees,
+        amountPaid: rentFeeVal,
         notes: notesPayload
       })
     });
-    await refreshAllData();
+
+    const cust = data?.customers.find(c => c.id === rentalData.customerId);
+    const cyl = data?.cylinders.find(c => c.id === rentalData.cylinderId);
+
+    const newRentalMapped: Rental = {
+      id: res.id || `temp-${Date.now()}`,
+      customerId: rentalData.customerId,
+      customerName: cust ? cust.name : 'Pelanggan',
+      cylinderId: rentalData.cylinderId,
+      cylinderSerial: cyl ? cyl.serialNo : 'SN-OX',
+      cylinderSize: cyl ? cyl.size : '1m3',
+      rentDate: new Date().toISOString().split('T')[0],
+      returnDate: rentalData.returnDate,
+      actualReturnDate: undefined,
+      cylinderDeposit: depositAmount,
+      cylinderFee: Number(rentalData.rentalFee) || 0,
+      deposit: depositAmount,
+      rentalFee: rentFeeVal,
+      status: 'Active',
+      paymentMethod: rentalData.paymentMethod || 'Tunai',
+      invoiceNo: res.invoiceNo,
+      serviceType: rentalData.serviceType || 'Kios',
+      accessories: rentalData.accessories || []
+    };
+
+    const newTxMapped = {
+      id: `inc-${res.id || Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'Rental' as const,
+      description: `Pembayaran invoice sewa ${res.invoiceNo || ''}`.trim(),
+      paymentMethod: rentalData.paymentMethod || 'Tunai',
+      amount: rentFeeVal + depositAmount,
+      status: 'Completed' as const,
+      referenceId: res.id
+    };
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rentals: [newRentalMapped, ...prev.rentals],
+        transactions: [newTxMapped, ...prev.transactions],
+        cylinders: prev.cylinders.map(c => {
+          if (c.id === rentalData.cylinderId) {
+            return { ...c, status: 'Rented' };
+          }
+          return c;
+        })
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const returnRental = async (rentalId: string, actualReturnDate: string, status: any) => {
@@ -861,11 +973,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
     });
 
-    // If it is an accessory, automatically set its status to 'Available' or 'Maintenance'
     const s = (rental.cylinderSerial || '').toUpperCase();
-    const isAcc = s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-');
+    const sz = (rental.cylinderSize || '').toUpperCase();
+    const isAcc = s.startsWith('REG-') || s.startsWith('TRL-') || s.startsWith('ACC-') || sz === 'PCS';
+    let targetStatus = 'Available';
     if (isAcc) {
-      const targetStatus = status === 'Maintenance' ? 'Maintenance' : 'Available';
+      targetStatus = status === 'Maintenance' ? 'Maintenance' : 'Available';
+    } else {
+      if (status === 'Maintenance') {
+        targetStatus = 'Maintenance';
+      }
+    }
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rentals: prev.rentals.map(r => {
+          if (r.id === rentalId) {
+            return { ...r, status: 'Returned', actualReturnDate };
+          }
+          return r;
+        }),
+        cylinders: prev.cylinders.map(c => {
+          if (c.id === rental.cylinderId) {
+            return { ...c, status: targetStatus as any };
+          }
+          return c;
+        })
+      };
+    });
+
+    if (isAcc) {
       await updateCylinder(rental.cylinderId, { status: targetStatus });
     } else {
       if (status === 'Maintenance') {
@@ -873,12 +1012,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    await refreshAllData();
+    refreshAllDataWithDelay();
   };
 
   const sendToRefill = async (refillData: any) => {
-    // Backend demands cylinders must be empty to be filled
-    // Force EMPTY cylinder status beforehand so backend validation passes.
     await fetchApi(`/inventory/cylinders/${refillData.cylinderId}`, {
       method: 'PATCH',
       body: JSON.stringify({ status: 'EMPTY' })
@@ -891,19 +1028,75 @@ export function DataProvider({ children }: { children: ReactNode }) {
         cylinderIds: [refillData.cylinderId]
       })
     });
-    await refreshAllData();
+
+    const cyl = data?.cylinders.find(c => c.id === refillData.cylinderId);
+    const vendor = data?.vendors.find(v => v.id === refillData.vendorId);
+    const costVal = Number(refillData.cost) || 25000;
+
+    const newRefillMapped: Refill = {
+      id: refillData.cylinderId,
+      cylinderId: refillData.cylinderId,
+      cylinderSerial: cyl ? cyl.serialNo : 'SN-OX',
+      vendorId: refillData.vendorId,
+      vendorName: vendor ? vendor.companyName : 'Vendor Refill',
+      sendDate: refillData.sendDate || new Date().toISOString().split('T')[0],
+      cost: costVal,
+      status: 'Sent' as const
+    };
+
+    const newTxMapped = {
+      id: `exp-${Date.now()}`,
+      date: refillData.sendDate || new Date().toISOString().split('T')[0],
+      type: 'Refill' as const,
+      description: `Kirim isi ulang tabung ${cyl ? cyl.serialNo : ''} ke vendor ${vendor ? vendor.companyName : ''}`.trim(),
+      amount: costVal,
+      status: 'Completed' as const,
+      referenceId: refillData.cylinderId
+    };
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        refills: [newRefillMapped, ...prev.refills],
+        transactions: [newTxMapped, ...prev.transactions],
+        cylinders: prev.cylinders.map(c => {
+          if (c.id === refillData.cylinderId) {
+            return { ...c, status: 'At Vendor' };
+          }
+          return c;
+        })
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const receiveRefill = async (refillId: string, returnDate: string) => {
     await fetchApi('/transactions/refills/receive', {
       method: 'POST',
       body: JSON.stringify({
-        cylinderIds: [refillId], // refillId maps to cylinderId on frontend
+        cylinderIds: [refillId],
         costPerCylinder: 25000,
         amountPaid: 25000
       })
     });
-    await refreshAllData();
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        refills: prev.refills.filter(r => r.id !== refillId),
+        cylinders: prev.cylinders.map(c => {
+          if (c.id === refillId) {
+            return { ...c, status: 'Available' };
+          }
+          return c;
+        })
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const createStockMovement = async (mvt: any) => {
@@ -911,7 +1104,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const createPurchase = async (pur: any) => {
-    await fetchApi('/transactions/purchases', {
+    const totalAmount = pur.items.reduce((sum: number, i: any) => sum + (i.qty * i.cost), 0);
+    const res = await fetchApi('/transactions/purchases', {
       method: 'POST',
       body: JSON.stringify({
         vendorId: pur.vendorId,
@@ -920,10 +1114,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
           quantity: i.qty,
           unitCost: i.cost
         })),
-        amountPaid: pur.items.reduce((sum: number, i: any) => sum + (i.qty * i.cost), 0)
+        amountPaid: totalAmount
       })
     });
-    await refreshAllData();
+
+    const vendor = data?.vendors.find(v => v.id === pur.vendorId);
+
+    const newPurchaseMapped: Purchase = {
+      id: res.id || `temp-${Date.now()}`,
+      vendorId: pur.vendorId,
+      vendorName: vendor ? vendor.companyName : 'Vendor',
+      items: pur.items.map((i: any) => ({
+        itemId: i.itemId,
+        name: i.name || 'Produk',
+        qty: i.qty,
+        cost: i.cost
+      })),
+      totalAmount: totalAmount,
+      date: new Date().toISOString().split('T')[0],
+      status: 'Completed'
+    };
+
+    const newTxMapped = {
+      id: `exp-${res.id || Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'Purchase' as const,
+      description: `Pembelian restock inventaris dengan invoice ${res.invoiceNo || ''}`.trim(),
+      amount: totalAmount,
+      status: 'Completed' as const,
+      referenceId: res.id
+    };
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        purchases: [newPurchaseMapped, ...prev.purchases],
+        transactions: [newTxMapped, ...prev.transactions]
+      };
+    });
+
+    refreshAllDataWithDelay();
   };
 
   const createSale = async (sale: any) => {
@@ -931,6 +1162,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const upperPm = (sale.paymentMethod || 'TUNAI').toUpperCase();
     const rawPm = upperPm === 'TUNAI' || upperPm === 'CASH' ? 'TUNAI' : upperPm === 'TRANSFER' ? 'TRANSFER' : 'QRIS';
     const pmPayload = `${rawPm} [SERVICE: ${sType}]`;
+
+    const totalAmount = sale.items.reduce((sum: number, i: any) => sum + (i.qty * i.price), 0);
 
     const res = await fetchApi('/transactions/sales', {
       method: 'POST',
@@ -940,7 +1173,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           productId: i.productId,
           quantity: i.qty
         })),
-        amountPaid: sale.items.reduce((sum: number, i: any) => sum + (i.qty * i.price), 0),
+        amountPaid: totalAmount,
         paymentMethod: pmPayload
       })
     });
@@ -955,16 +1188,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
       };
     });
 
-    await refreshAllData();
+    const cust = data?.customers.find(c => c.id === (sale.customerId || res.customerId));
+    const cleanPm = (res.paymentMethod === 'E_WALLET' || res.paymentMethod === 'QRIS') ? ('QRIS' as const) : (res.paymentMethod === 'TRANSFER' ? ('Transfer' as const) : ('Tunai' as const));
 
-    return {
+    const newSaleMapped: Sale = {
       id: res.id,
       customerId: res.customerId || '',
-      paymentMethod: (res.paymentMethod === 'E_WALLET' || res.paymentMethod === 'QRIS') ? 'QRIS' : (res.paymentMethod === 'TRANSFER' ? 'Transfer' : 'Tunai'),
-      amount: Number(res.totalAmount) || 0,
+      customerName: cust ? cust.name : 'Umum',
+      paymentMethod: cleanPm,
+      totalAmount: Number(res.totalAmount) || totalAmount,
       date: new Date(res.createdAt).toISOString().split('T')[0],
-      items: mappedItems
+      items: mappedItems,
+      status: 'Paid',
+      invoiceNo: res.invoiceNo,
+      serviceType: sale.serviceType || 'Kios'
     };
+
+    const newTxMapped = {
+      id: `inc-${res.id || Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'Sale' as const,
+      description: `Pembayaran invoice penjualan ${res.invoiceNo || ''}`.trim(),
+      paymentMethod: newSaleMapped.paymentMethod,
+      amount: totalAmount,
+      status: 'Completed' as const,
+      referenceId: res.id
+    };
+
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sales: [newSaleMapped, ...prev.sales],
+        transactions: [newTxMapped, ...prev.transactions]
+      };
+    });
+
+    refreshAllDataWithDelay();
+
+    return newSaleMapped;
   };
 
   const createExpense = async (exp: any) => {

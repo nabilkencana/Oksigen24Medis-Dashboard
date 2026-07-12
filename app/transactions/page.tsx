@@ -56,12 +56,15 @@ export default function TransactionsPage() {
   const changeTab = (tab: TabType) => {
     setActiveTab(tab);
     setSearchTerm('');
+    setStatusFilter('All');
+    setTypeFilter('All');
     router.replace(`/transactions?tab=${tab}`);
   };
 
   // Search & Filters state
   const [searchTerm, setSearchTerm] = useState(urlSearch);
   const [statusFilter, setStatusFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -119,7 +122,7 @@ export default function TransactionsPage() {
   // -------------------------------------------------------------
   const filteredRentals = useMemo(() => {
     return rentals.filter(r => {
-      const isAcc = isAccessoryAsset(r.cylinderSerial || '');
+      const isAcc = isAccessoryAsset(r.cylinderSerial || '', r.cylinderSize || '');
       const isCorrectTabType = activeTab === 'accessory-rental' ? isAcc : !isAcc;
       if (!isCorrectTabType) return false;
 
@@ -392,6 +395,30 @@ export default function TransactionsPage() {
   // Filter cylinders for refills (need empty cylinders or maintenance ones)
   const emptyCylinders = cylinders.filter(c => c.status === 'Empty' || c.status === 'Maintenance');
   const rentedCylindersForReturn = rentals.filter(r => r.status === 'Active' || r.status === 'Overdue');
+  const filteredReturns = useMemo(() => {
+    return rentedCylindersForReturn.filter(r => {
+      const cust = customers.find(c => c.id === r.customerId);
+      const isAcc = isAccessoryAsset(r.cylinderSerial || '', r.cylinderSize || '');
+
+      // Type Filter
+      if (typeFilter !== 'All') {
+        if (typeFilter === 'Accessory' && !isAcc) return false;
+        if (typeFilter === 'Cylinder' && isAcc) return false;
+      }
+
+      // Search matching
+      const matchesSearch =
+        r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (cust && cust.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        r.cylinderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (r.cylinderSerial || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Status matching (All, Active, Overdue)
+      const matchesStatus = statusFilter === 'All' || r.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [rentedCylindersForReturn, customers, searchTerm, statusFilter, typeFilter]);
 
   return (
     <div className="space-y-6">
@@ -668,74 +695,120 @@ export default function TransactionsPage() {
           <CardContent>
             {rentedCylindersForReturn.length > 0 ? (
               <div className="space-y-4">
-                <p className="text-xs text-amber-600 font-bold bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
-                  {(() => {
-                    const accCount = rentedCylindersForReturn.filter(r => isAccessoryAsset(r.cylinderSerial || '')).length;
-                    const cylCount = rentedCylindersForReturn.length - accCount;
-                    return `⚠️ Terdapat ${rentedCylindersForReturn.length} barang sewa aktif (${cylCount} tabung, ${accCount} aksesoris) yang belum dikembalikan oleh pelanggan.`;
-                  })()}
-                </p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID Sewa</TableHead>
-                      <TableHead>Pelanggan</TableHead>
-                      <TableHead>Tipe</TableHead>
-                      <TableHead>Barang / Serial</TableHead>
-                      <TableHead>Tanggal Pinjam</TableHead>
-                      <TableHead>Uang Deposit</TableHead>
-                      <TableHead>Status Kontrak</TableHead>
-                      <TableHead className="text-right">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rentedCylindersForReturn.map(r => {
-                      const cust = customers.find(c => c.id === r.customerId);
-                      const isAcc = isAccessoryAsset(r.cylinderSerial || '');
-                      return (
-                        <TableRow key={r.id}>
-                          <TableCell className="font-bold text-foreground">{r.id}</TableCell>
-                          <TableCell>{cust ? cust.name : 'Unknown'}</TableCell>
-                          <TableCell>
-                            <Badge variant={isAcc ? 'secondary' : 'success'}>
-                              {isAcc ? 'Aksesoris' : 'Tabung'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-semibold text-foreground">
-                            {r.cylinderSerial || r.cylinderId}
-                          </TableCell>
-                          <TableCell>{r.rentDate}</TableCell>
-                          <TableCell>{formatRupiah(r.deposit)}</TableCell>
-                          <TableCell>
-                            <Badge variant={r.status === 'Overdue' ? 'destructive' : 'success'}>
-                              {r.status === 'Overdue' ? 'Overdue (Denda)' : 'Aktif'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs text-primary"
-                              onClick={() => {
-                                setReturnForm(prev => ({ ...prev, rentalId: r.id }));
-                                setIsReturnDrawerOpen(true);
-                              }}
-                            >
-                              Log Kembali
-                            </Button>
-                          </TableCell>
+                {/* Search & Filter */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4 items-center">
+                  <div className="relative w-full sm:flex-1">
+                    <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Cari ID sewa, nama pelanggan, nomor seri..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="pl-9 pr-4 h-10 w-full text-sm bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    />
+                  </div>
+                  <div className="w-full sm:w-44 shrink-0">
+                    <Select
+                      id="returnTypeFilter"
+                      value={typeFilter}
+                      onChange={e => setTypeFilter(e.target.value)}
+                      options={[
+                        { value: 'All', label: 'Semua Tipe' },
+                        { value: 'Cylinder', label: 'Tabung Oksigen' },
+                        { value: 'Accessory', label: 'Aksesoris Medis' }
+                      ]}
+                    />
+                  </div>
+                  <div className="w-full sm:w-44 shrink-0">
+                    <Select
+                      id="returnStatusFilter"
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                      options={[
+                        { value: 'All', label: 'Semua Status' },
+                        { value: 'Active', label: 'Aktif' },
+                        { value: 'Overdue', label: 'Overdue (Denda)' }
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {filteredReturns.length > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-xs text-amber-600 font-bold bg-amber-500/10 p-3 rounded-lg border border-amber-500/20">
+                      {(() => {
+                        const accCount = rentedCylindersForReturn.filter(r => isAccessoryAsset(r.cylinderSerial || '', r.cylinderSize || '')).length;
+                        const cylCount = rentedCylindersForReturn.length - accCount;
+                        return `⚠️ Terdapat ${rentedCylindersForReturn.length} barang sewa aktif (${cylCount} tabung, ${accCount} aksesoris) yang belum dikembalikan oleh pelanggan.`;
+                      })()}
+                    </p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID Sewa</TableHead>
+                          <TableHead>Pelanggan</TableHead>
+                          <TableHead>Tipe</TableHead>
+                          <TableHead>Barang / Serial</TableHead>
+                          <TableHead>Tanggal Pinjam</TableHead>
+                          <TableHead>Uang Deposit</TableHead>
+                          <TableHead>Status Kontrak</TableHead>
+                          <TableHead className="text-right">Aksi</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredReturns.map(r => {
+                          const cust = customers.find(c => c.id === r.customerId);
+                          const isAcc = isAccessoryAsset(r.cylinderSerial || '', r.cylinderSize || '');
+                          return (
+                            <TableRow key={r.id}>
+                              <TableCell className="font-bold text-foreground">{r.id}</TableCell>
+                              <TableCell>{cust ? cust.name : 'Unknown'}</TableCell>
+                              <TableCell>
+                                <Badge variant={isAcc ? 'secondary' : 'success'}>
+                                  {isAcc ? 'Aksesoris' : 'Tabung'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold text-foreground">
+                                {r.cylinderSerial || r.cylinderId}
+                              </TableCell>
+                              <TableCell>{r.rentDate}</TableCell>
+                              <TableCell>{formatRupiah(r.deposit)}</TableCell>
+                              <TableCell>
+                                <Badge variant={r.status === 'Overdue' ? 'destructive' : 'success'}>
+                                  {r.status === 'Overdue' ? 'Overdue (Denda)' : 'Aktif'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs text-primary"
+                                  onClick={() => {
+                                    setReturnForm(prev => ({ ...prev, rentalId: r.id }));
+                                    setIsReturnDrawerOpen(true);
+                                  }}
+                                >
+                                  Log Kembali
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="py-12 text-center text-xs text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+                    Tidak ada pengembalian aktif yang cocok dengan filter atau pencarian Anda.
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
-                <h3 className="text-base font-bold text-foreground">Semua Tabung Aman</h3>
+                <h3 className="text-base font-bold text-foreground">Semua Tabung & Aksesoris Aman</h3>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  Tidak ada tabung sewa yang aktif saat ini. Semua aset tabung oksigen berada di dalam gudang atau sedang antre di vendor pengisian.
+                  Tidak ada tabung atau aksesoris sewa yang aktif saat ini. Semua aset sewa berada di dalam gudang.
                 </p>
               </div>
             )}

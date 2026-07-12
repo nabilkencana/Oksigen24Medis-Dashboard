@@ -45,6 +45,7 @@ export interface Rental {
   customerName: string;
   cylinderId: string;
   cylinderSerial: string;
+  cylinderSize?: string;
   rentDate: string;
   returnDate: string;
   actualReturnDate?: string;

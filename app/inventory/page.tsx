@@ -84,6 +84,7 @@ export default function InventoryPage() {
 
   // Dynamic accessories creation states
   const [showNewAccessoryForm, setShowNewAccessoryForm] = useState(false);
+  const [isSavingAccessory, setIsSavingAccessory] = useState(false);
   const [newAccessory, setNewAccessory] = useState({
     name: '',
     pricePerUnit: '25000',
@@ -157,6 +158,7 @@ export default function InventoryPage() {
   const resetForms = () => {
     setEditingId(null);
     setShowNewAccessoryForm(false);
+    setIsSavingAccessory(false);
     setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
     const today = new Date().toISOString().split('T')[0];
     setCylinderForm({
@@ -536,7 +538,7 @@ export default function InventoryPage() {
                     <TableCell>{c.lastInspection}</TableCell>
                     <TableCell>
                       <Badge variant={c.status === 'Available' ? 'success' : c.status === 'Rented' ? 'secondary' : c.status === 'At Vendor' ? 'info' : 'destructive'}>
-                        {c.status === 'Available' ? 'Tersedia' : c.status === 'Rented' ? 'Disewa' : c.status === 'At Vendor' ? 'Di Vendor' : 'Servis'}
+                        {c.status === 'Available' ? 'Tersedia' : c.status === 'Rented' ? 'Disewa' : c.status === 'At Vendor' ? 'Di Vendor' : c.status === 'Empty' ? 'Kosong' : 'Maintenance'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right space-x-1">
@@ -825,11 +827,12 @@ export default function InventoryPage() {
                   <h4 className="text-xs font-bold text-foreground">Nama / Tipe Aksesoris Baru</h4>
                   <button
                     type="button"
+                    disabled={isSavingAccessory}
                     onClick={() => {
                       setShowNewAccessoryForm(false);
                       setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
                     }}
-                    className="text-xs text-primary font-semibold hover:underline"
+                    className="text-xs text-primary font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ← Pilih Aksesoris
                   </button>
@@ -840,6 +843,7 @@ export default function InventoryPage() {
                   placeholder="e.g. Sewa Humidifier Medis"
                   value={newAccessory.name}
                   onChange={e => setNewAccessory({ ...newAccessory, name: e.target.value })}
+                  disabled={isSavingAccessory}
                   required
                 />
                 <Input
@@ -849,6 +853,7 @@ export default function InventoryPage() {
                   placeholder="e.g. 25000"
                   value={newAccessory.pricePerUnit}
                   onChange={e => setNewAccessory({ ...newAccessory, pricePerUnit: e.target.value })}
+                  disabled={isSavingAccessory}
                   required
                 />
                 <Textarea
@@ -857,12 +862,14 @@ export default function InventoryPage() {
                   placeholder="e.g. Sewa botol pelembab udara"
                   value={newAccessory.description}
                   onChange={e => setNewAccessory({ ...newAccessory, description: e.target.value })}
+                  disabled={isSavingAccessory}
                 />
                 <div className="flex gap-2 justify-end">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={isSavingAccessory}
                     onClick={() => {
                       setShowNewAccessoryForm(false);
                       setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
@@ -873,6 +880,7 @@ export default function InventoryPage() {
                   <Button
                     type="button"
                     size="sm"
+                    disabled={isSavingAccessory}
                     onClick={async () => {
                       if (!newAccessory.name || !newAccessory.pricePerUnit) {
                         alert('Harap isi semua kolom wajib (*)');
@@ -885,6 +893,7 @@ export default function InventoryPage() {
                         finalName = `Sewa ${finalName}`;
                       }
 
+                      setIsSavingAccessory(true);
                       try {
                         await addOxygenType({
                           name: finalName,
@@ -899,10 +908,19 @@ export default function InventoryPage() {
                       } catch (err: unknown) {
                         const errMsg = err instanceof Error ? err.message : 'Gagal menambahkan tipe aksesoris baru.';
                         alert(errMsg);
+                      } finally {
+                        setIsSavingAccessory(false);
                       }
                     }}
                   >
-                    Simpan Aksesoris
+                    {isSavingAccessory ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Menyimpan...</span>
+                      </div>
+                    ) : (
+                      'Simpan Aksesoris'
+                    )}
                   </Button>
                 </div>
               </div>
@@ -945,12 +963,12 @@ export default function InventoryPage() {
               options={activeTab === 'accessories' ? [
                 { value: 'Available', label: 'Tersedia di Gudang (Available)' },
                 { value: 'Rented', label: 'Sedang Disewa (Rented)' },
-                { value: 'Maintenance', label: 'Sedang Servis (Maintenance)' }
+                { value: 'Maintenance', label: 'Maintenance (Maintenance)' }
               ] : [
                 { value: 'Available', label: 'Tersedia di Gudang (Available)' },
                 { value: 'Rented', label: 'Sedang Disewa (Rented)' },
                 { value: 'At Vendor', label: 'Isi Ulang di Vendor (At Vendor)' },
-                { value: 'Maintenance', label: 'Sedang Servis (Maintenance)' },
+                { value: 'Maintenance', label: 'Maintenance (Maintenance)' },
                 { value: 'Empty', label: 'Kosong (Empty)' }
               ]}
             />

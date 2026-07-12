@@ -6,7 +6,7 @@ import { useData } from '../../context/DataContext';
 import { formatRupiah, Cylinder, Product, Customer, Vendor } from '../../context/mockData';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Input, Select, Textarea } from '../../components/ui/Input';
+import { Input, Select, Textarea, Label } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { Drawer } from '../../components/ui/Drawer';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Pagination } from '../../components/ui/Table';
@@ -43,7 +43,8 @@ export default function InventoryPage() {
     deleteCylinder,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    addOxygenType
   } = useData();
 
   // Tab State
@@ -80,6 +81,14 @@ export default function InventoryPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Dynamic accessories creation states
+  const [showNewAccessoryForm, setShowNewAccessoryForm] = useState(false);
+  const [newAccessory, setNewAccessory] = useState({
+    name: '',
+    pricePerUnit: '25000',
+    description: ''
+  });
 
   // Form states
   // Form states
@@ -147,6 +156,8 @@ export default function InventoryPage() {
   // Reset form helper
   const resetForms = () => {
     setEditingId(null);
+    setShowNewAccessoryForm(false);
+    setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
     const today = new Date().toISOString().split('T')[0];
     setCylinderForm({
       serialNo: '',
@@ -807,20 +818,117 @@ export default function InventoryPage() {
               { value: '6m3', label: '6 m³' }
             ]}
           />
-          <Select
-            label={activeTab === 'accessories' ? "Nama / Tipe Aksesoris *" : "Grade Kandungan Gas *"}
-            id="cylType"
-            value={cylinderForm.oxygenType}
-            onChange={e => setCylinderForm({ ...cylinderForm, oxygenType: e.target.value as any })}
-            options={
-              activeTab === 'accessories' ? oxygenTypes
-                .filter(t => t.name.toLowerCase().includes('sewa') || t.name.toLowerCase().includes('regulator') || t.name.toLowerCase().includes('troli'))
-                .map(t => ({ value: t.name, label: t.name }))
-              : oxygenTypes
-                .filter(t => !t.name.toLowerCase().includes('sewa') && !t.name.toLowerCase().includes('regulator') && !t.name.toLowerCase().includes('troli'))
-                .map(t => ({ value: t.name, label: t.name }))
-            }
-          />
+          {activeTab === 'accessories' ? (
+            showNewAccessoryForm ? (
+              <div className="p-3 border border-border bg-muted/20 rounded-lg space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-foreground">Nama / Tipe Aksesoris Baru</h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewAccessoryForm(false);
+                      setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
+                    }}
+                    className="text-xs text-primary font-semibold hover:underline"
+                  >
+                    ← Pilih Aksesoris
+                  </button>
+                </div>
+                <Input
+                  label="Nama Aksesoris *"
+                  id="newAccName"
+                  placeholder="e.g. Sewa Humidifier Medis"
+                  value={newAccessory.name}
+                  onChange={e => setNewAccessory({ ...newAccessory, name: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Biaya Sewa per Unit (Rp) *"
+                  id="newAccPrice"
+                  isRupiah={true}
+                  placeholder="e.g. 25000"
+                  value={newAccessory.pricePerUnit}
+                  onChange={e => setNewAccessory({ ...newAccessory, pricePerUnit: e.target.value })}
+                  required
+                />
+                <Textarea
+                  label="Keterangan / Deskripsi"
+                  id="newAccDesc"
+                  placeholder="e.g. Sewa botol pelembab udara"
+                  value={newAccessory.description}
+                  onChange={e => setNewAccessory({ ...newAccessory, description: e.target.value })}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewAccessoryForm(false);
+                      setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
+                    }}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={async () => {
+                      if (!newAccessory.name || !newAccessory.pricePerUnit) {
+                        alert('Harap isi semua kolom wajib (*)');
+                        return;
+                      }
+
+                      let finalName = newAccessory.name;
+                      const lowerName = finalName.toLowerCase();
+                      if (!lowerName.includes('sewa') && !lowerName.includes('regulator') && !lowerName.includes('troli')) {
+                        finalName = `Sewa ${finalName}`;
+                      }
+
+                      try {
+                        await addOxygenType({
+                          name: finalName,
+                          purity: 0,
+                          pricePerUnit: Number(newAccessory.pricePerUnit),
+                          description: newAccessory.description
+                        });
+
+                        setCylinderForm(prev => ({ ...prev, oxygenType: finalName }));
+                        setShowNewAccessoryForm(false);
+                        setNewAccessory({ name: '', pricePerUnit: '25000', description: '' });
+                      } catch (err: unknown) {
+                        const errMsg = err instanceof Error ? err.message : 'Gagal menambahkan tipe aksesoris baru.';
+                        alert(errMsg);
+                      }
+                    }}
+                  >
+                    Simpan Aksesoris
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5 w-full">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="cylType">Nama / Tipe Aksesoris *</Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewAccessoryForm(true)}
+                    className="text-xs text-primary font-semibold hover:underline"
+                  >
+                    + Tambah Aksesoris Baru
+                  </button>
+                </div>
+                <Select
+                  id="cylType"
+                  value={cylinderForm.oxygenType}
+                  onChange={e => setCylinderForm({ ...cylinderForm, oxygenType: e.target.value as any })}
+                  options={oxygenTypes
+                    .filter(t => t.name.toLowerCase().includes('sewa') || t.name.toLowerCase().includes('regulator') || t.name.toLowerCase().includes('troli'))
+                    .map(t => ({ value: t.name, label: t.name }))}
+                />
+              </div>
+            )
+          ) : null}
           <Input
             label={activeTab === 'accessories' ? "Tanggal Inspeksi / Kelayakan *" : "Tanggal Hydrotest / Inspeksi Terakhir *"}
             id="cylInspect"

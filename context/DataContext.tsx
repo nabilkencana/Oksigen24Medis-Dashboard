@@ -45,6 +45,7 @@ interface DataContextType {
   addCylinder: (cyl: Omit<Cylinder, 'id'>) => Promise<void>;
   updateCylinder: (id: string, cyl: Partial<Cylinder>) => Promise<void>;
   deleteCylinder: (id: string) => Promise<void>;
+  addOxygenType: (ot: { name: string; purity: number; pricePerUnit: number; description?: string }) => Promise<any>;
   addProduct: (prod: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -751,6 +752,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await refreshAllData();
   };
 
+  const addOxygenType = async (ot: { name: string; purity: number; pricePerUnit: number; description?: string }) => {
+    const res = await fetchApi('/inventory/oxygen-types', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: ot.name,
+        purity: Number(ot.purity),
+        pricePerUnit: Number(ot.pricePerUnit),
+        description: ot.description || ''
+      })
+    });
+    await refreshAllData();
+    return res;
+  };
+
   const addProduct = async (prod: any) => {
     const matchedCategory = categories.find(c =>
       c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
@@ -1075,6 +1090,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addCylinder,
         updateCylinder,
         deleteCylinder,
+        addOxygenType,
         addProduct,
         updateProduct,
         deleteProduct,

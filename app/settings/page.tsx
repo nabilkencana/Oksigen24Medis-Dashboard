@@ -218,12 +218,12 @@ export default function SettingsPage() {
         {/* 1. USERS LIST */}
         {activeTab === 'users' && isOwnerOrAdmin && (
           <Card>
-            <CardHeader className="flex flex-row justify-between items-center space-y-0 p-6 border-b border-border/40">
+            <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-6 border-b border-border/40">
               <div>
                 <CardTitle>Daftar Akun Karyawan</CardTitle>
                 <CardDescription>Manajemen data akun staf operasional sistem logistik oksigen.</CardDescription>
               </div>
-              <Button onClick={openAddDrawer} className="flex items-center gap-1.5 text-xs">
+              <Button onClick={openAddDrawer} className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs shrink-0 cursor-pointer">
                 <Plus className="w-3.5 h-3.5" /> Tambah Karyawan
               </Button>
             </CardHeader>
@@ -235,30 +235,34 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   users.map(usr => (
-                    <div key={usr.id} className="flex justify-between items-center p-4">
-                      <div className="flex gap-3 items-center">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold select-none">
+                    <div key={usr.id} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 gap-4">
+                      {/* Left side: Avatar, Name, Email, ID */}
+                      <div className="flex gap-3 items-center min-w-0 w-full sm:w-auto">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold select-none shrink-0">
                           {(usr.name || '').substring(0,2).toUpperCase()}
                         </div>
-                        <div>
-                          <p className="font-bold text-foreground">{usr.name}</p>
-                          <p className="text-muted-foreground mt-0.5">{usr.email} • ID: {usr.id}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground truncate">{usr.name}</p>
+                          <p className="text-muted-foreground mt-0.5 truncate">{usr.email}</p>
+                          <p className="text-3xs text-muted-foreground/75 mt-0.5 font-mono truncate">ID: {usr.id}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-end gap-1">
-                          <span className="font-semibold text-muted-foreground">{getIndonesianRole(usr.role)}</span>
+
+                      {/* Right side: Role/Status & Actions */}
+                      <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 border-border/40 pt-3 sm:pt-0 w-full sm:w-auto">
+                        <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1 text-left sm:text-right shrink-0">
+                          <span className="font-semibold text-muted-foreground text-xs">{getIndonesianRole(usr.role)}</span>
                           <Badge variant={usr.status === 'Active' ? 'success' : 'secondary'}>
                             {usr.status === 'Active' ? 'AKTIF' : 'NON-AKTIF'}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-1.5 border-l border-border pl-3">
+                        <div className="flex items-center gap-1.5 border-l border-border/80 pl-3 shrink-0">
                           <button
                             onClick={() => openEditDrawer(usr)}
-                            className="p-1.5 rounded-lg border border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                            className="p-2 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
                             title="Edit Karyawan"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-4 h-4" />
                           </button>
                           {isOwner && (
                             <button
@@ -266,10 +270,10 @@ export default function SettingsPage() {
                                 setEmployeeToDelete(usr);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="p-1.5 rounded-lg border border-border hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 cursor-pointer transition-colors"
+                              className="p-2 rounded-lg border border-border bg-background hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 cursor-pointer transition-colors"
                               title="Hapus Karyawan"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -375,12 +379,12 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="border-t border-border pt-4 flex justify-between items-center">
-                  <div className="flex items-center gap-2 text-xs">
+                <div className="border-t border-border pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-muted-foreground">Tingkat Jabatan Anda:</span>
                     <Badge variant="secondary">{getIndonesianRole(profileForm.role)}</Badge>
                   </div>
-                  <Button type="submit" disabled={isSaving} className="flex items-center gap-1.5">
+                  <Button type="submit" disabled={isSaving} className="w-full sm:w-auto flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
                     <Save className="w-4 h-4" /> {isSaving ? 'Menyimpan...' : 'Perbarui Akun Saya'}
                   </Button>
                 </div>

@@ -371,37 +371,42 @@ export default function InventoryPage() {
           <p className="text-xs text-muted-foreground mt-0.5">Kelola tabung oksigen, katalog produk retail, data pelanggan, dan profil vendor.</p>
         </div>
 
-        <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold shrink-0">
-          <button
-            onClick={() => changeTab('cylinders')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'cylinders' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Tabung Oksigen
-          </button>
-          <button
-            onClick={() => changeTab('accessories')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'accessories' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Aset Aksesoris
-          </button>
-          <button
-            onClick={() => changeTab('products')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'products' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Katalog Produk
-          </button>
-          <button
-            onClick={() => changeTab('customers')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'customers' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Pelanggan
-          </button>
-          <button
-            onClick={() => changeTab('vendors')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'vendors' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Mitra Vendor
-          </button>
+        {/* Tab Buttons Wrapper with right-fade scroll indicator on mobile */}
+        <div className="relative w-full overflow-hidden sm:overflow-visible shrink-0 lg:w-auto">
+          <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold overflow-x-auto max-w-full scrollbar-none pr-8 sm:pr-1 shrink-0">
+            <button
+              onClick={() => changeTab('cylinders')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'cylinders' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Tabung Oksigen
+            </button>
+            <button
+              onClick={() => changeTab('accessories')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'accessories' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Aset Aksesoris
+            </button>
+            <button
+              onClick={() => changeTab('products')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'products' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Katalog Produk
+            </button>
+            <button
+              onClick={() => changeTab('customers')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'customers' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Pelanggan
+            </button>
+            <button
+              onClick={() => changeTab('vendors')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'vendors' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Mitra Vendor
+            </button>
+          </div>
+          {/* Scroll fade indicator for mobile only */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
         </div>
       </div>
 

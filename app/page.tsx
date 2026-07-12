@@ -310,7 +310,7 @@ export default function Home() {
         
         {/* Today Revenue */}
         <Card>
-          <CardContent className="p-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Pendapatan Hari Ini</span>
               <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -333,7 +333,7 @@ export default function Home() {
 
         {/* Active Rentals */}
         <Card>
-          <CardContent className="p-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Rental Aktif</span>
               <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
@@ -356,7 +356,7 @@ export default function Home() {
 
         {/* Available Cylinders */}
         <Card>
-          <CardContent className="p-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Tabung Tersedia</span>
               <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
@@ -374,7 +374,7 @@ export default function Home() {
 
         {/* Cylinders at Vendor */}
         <Card>
-          <CardContent className="p-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Tabung di Vendor</span>
               <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500">
@@ -392,7 +392,7 @@ export default function Home() {
 
         {/* Low Stock */}
         <Card>
-          <CardContent className="p-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Stok Menipis</span>
               <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500">
@@ -428,19 +428,24 @@ export default function Home() {
         ].filter(a => !a.roles || a.roles.includes(userRole));
 
         return (
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/20 border border-border/80 rounded-xl">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-2">Pintasan Cepat:</span>
-            {quickActions.map(a => (
-              <Button
-                key={a.label}
-                size="sm"
-                variant={a.primary ? 'primary' : 'secondary'}
-                className={`flex items-center gap-1.5${!a.primary ? ' border border-border' : ''}`}
-                onClick={a.onClick}
-              >
-                {a.icon} {a.label}
-              </Button>
-            ))}
+          <div className="p-4 bg-card border border-border/80 rounded-xl space-y-3 shadow-xs">
+            <div className="flex items-center">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pintasan Cepat</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+              {quickActions.map(a => (
+                <Button
+                  key={a.label}
+                  size="sm"
+                  variant={a.primary ? 'primary' : 'secondary'}
+                  className={`flex items-center justify-center gap-1.5 w-full text-center text-xs h-9 cursor-pointer transition-all ${!a.primary ? ' border border-border hover:bg-muted' : ''}`}
+                  onClick={a.onClick}
+                >
+                  {a.icon}
+                  <span className="truncate">{a.label}</span>
+                </Button>
+              ))}
+            </div>
           </div>
         );
       })()}

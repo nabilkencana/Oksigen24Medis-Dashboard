@@ -201,8 +201,8 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card text-card-foreground shrink-0 select-none">
 
         {/* Sidebar Logo */}
-        <div className="h-18 flex items-center px-6 border-b border-border/60">
-          <img src="/logo-full-removebg-preview.png" alt="Website Logo" className="h-20 object-contain" />
+        <div className="h-30 flex items-center px-6 border-b border-border/60">
+          <img src="/logo-full-removebg-preview.png" alt="Website Logo" className="h-30 object-contain" />
         </div>
 
         {/* Sidebar Links */}
@@ -407,7 +407,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-6 border-b border-border/60">
                 <div className="flex items-center gap-3">
-                  <img src="/logo-full-removebg-preview.png" alt="Website Logo" className="h-8 w-8 object-contain" />
+                  <img src="/logo-removebg-preview.png" alt="Website Logo" className="h-8 w-8 object-contain" />
                   <h1 className="font-bold text-sm text-foreground">Oksigen24Medis</h1>
                 </div>
                 <button

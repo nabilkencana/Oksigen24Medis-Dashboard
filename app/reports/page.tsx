@@ -366,7 +366,7 @@ export default function ReportsPage() {
 
       {/* Unified Filters panel */}
       <Card className="no-print">
-        <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4 text-xs">
+        <CardContent className="p-4 pt-4 flex flex-col md:flex-row items-center gap-4 text-xs">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 flex-1 w-full">
             <Input
               label="Tanggal Mulai"
@@ -427,14 +427,14 @@ export default function ReportsPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Total Pendapatan Tergabung</span>
                   <p className="text-xl font-bold text-foreground mt-1.5">{formatRupiah(revenueTotal)}</p>
                   <p className="text-4xs text-muted-foreground mt-1">Sewa & Penjualan Retail Lunas</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Kontribusi Sewa Oksigen</span>
                   <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1.5">{formatRupiah(rentalRevenueTotal)}</p>
                   <p className="text-4xs text-muted-foreground mt-1">
@@ -443,7 +443,7 @@ export default function ReportsPage() {
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Kontribusi Jual Aksesoris</span>
                   <p className="text-xl font-bold text-blue-500 mt-1.5">{formatRupiah(salesRevenueTotal)}</p>
                   <p className="text-4xs text-muted-foreground mt-1">
@@ -516,25 +516,25 @@ export default function ReportsPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Total Kontrak Sewa</span>
                   <p className="text-xl font-bold text-foreground mt-1.5">{totalRentalsCount} Kontrak</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Tabung Terlambat</span>
                   <p className="text-xl font-bold text-rose-500 mt-1.5">{overdueRentalsCount} Unit</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Tabung Kembali</span>
                   <p className="text-xl font-bold text-emerald-500 mt-1.5">{returnedRentalsCount} Unit</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Rasio Pengembalian</span>
                   <p className="text-xl font-bold text-blue-500 mt-1.5">{returnRate}% Rasio</p>
                 </CardContent>
@@ -558,14 +558,14 @@ export default function ReportsPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Total Kas Keluar (Lunas)</span>
                   <p className="text-xl font-bold text-rose-500 mt-1.5">{formatRupiah(expenseTotal)}</p>
                   <p className="text-4xs text-muted-foreground mt-1">Biaya operasional ruko, supir, bensin & tagihan bulanan</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Rata-rata Transaksi Biaya</span>
                   <p className="text-xl font-bold text-foreground mt-1.5">
                     {formatRupiah(dateFilteredExpenses.length > 0 ? Math.round(expenseTotal / dateFilteredExpenses.length) : 0)}
@@ -626,25 +626,25 @@ export default function ReportsPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Tersedia di Gudang</span>
                   <p className="text-xl font-bold text-emerald-500 mt-1.5">{availableCyl} Unit</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Sedang Disewa</span>
                   <p className="text-xl font-bold text-blue-500 mt-1.5">{rentedCyl} Unit</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Di Vendor Refill</span>
                   <p className="text-xl font-bold text-amber-500 mt-1.5">{vendorCyl} Unit</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-5">
+                <CardContent className="p-5 pt-5">
                   <span className="text-3xs font-bold text-muted-foreground uppercase tracking-widest">Maintenance (Uji/Cat)</span>
                   <p className="text-xl font-bold text-rose-500 mt-1.5">{maintenanceCyl} Unit</p>
                 </CardContent>

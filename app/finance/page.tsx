@@ -250,7 +250,7 @@ export default function FinancePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Pendapatan */}
             <Card className="overflow-hidden border border-emerald-500/10 bg-gradient-to-br from-emerald-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6 flex flex-col justify-between h-32">
+              <CardContent className="p-6 pt-6 flex flex-col justify-between h-32">
                 <div className="flex justify-between items-center">
                   <span className="text-3xs font-bold text-emerald-800 dark:text-emerald-300 tracking-wider uppercase">Total Pendapatan</span>
                   <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
@@ -266,7 +266,7 @@ export default function FinancePage() {
 
             {/* Total Pengeluaran */}
             <Card className="overflow-hidden border border-rose-500/10 bg-gradient-to-br from-rose-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6 flex flex-col justify-between h-32">
+              <CardContent className="p-6 pt-6 flex flex-col justify-between h-32">
                 <div className="flex justify-between items-center">
                   <span className="text-3xs font-bold text-rose-800 dark:text-rose-300 tracking-wider uppercase">Total Pengeluaran</span>
                   <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400">
@@ -282,7 +282,7 @@ export default function FinancePage() {
 
             {/* Laba Bersih */}
             <Card className="overflow-hidden border border-blue-500/10 bg-gradient-to-br from-blue-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6 flex flex-col justify-between h-32">
+              <CardContent className="p-6 pt-6 flex flex-col justify-between h-32">
                 <div className="flex justify-between items-center">
                   <span className="text-3xs font-bold text-blue-800 dark:text-blue-300 tracking-wider uppercase">Laba Bersih</span>
                   <div className="p-2 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400">
@@ -298,7 +298,7 @@ export default function FinancePage() {
 
             {/* Margin Laba */}
             <Card className="overflow-hidden border border-amber-500/10 bg-gradient-to-br from-amber-500/[0.02] to-transparent hover:shadow-md transition-all duration-300">
-              <CardContent className="p-6 flex flex-col justify-between h-32">
+              <CardContent className="p-6 pt-6 flex flex-col justify-between h-32">
                 <div className="flex justify-between items-center">
                   <span className="text-3xs font-bold text-amber-800 dark:text-amber-300 tracking-wider uppercase">Margin Laba</span>
                   <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">

@@ -466,44 +466,48 @@ export default function TransactionsPage() {
           <p className="text-xs text-muted-foreground mt-0.5">Kelola rental tabung, kasir POS ritel, restock grosir, dan logistik isi ulang.</p>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold shrink-0">
-          <button
-            onClick={() => changeTab('rental')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'rental' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Sewa Tabung
-          </button>
-          <button
-            onClick={() => changeTab('accessory-rental')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'accessory-rental' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Sewa Aksesoris
-          </button>
-          <button
-            onClick={() => changeTab('return')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'return' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Pengembalian
-          </button>
-          <button
-            onClick={() => changeTab('sales')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'sales' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Kasir POS
-          </button>
-          <button
-            onClick={() => changeTab('restock')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'restock' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Restock Supplier
-          </button>
-          <button
-            onClick={() => changeTab('refill')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'refill' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Refill Vendor
-          </button>
+        {/* Tab Buttons Wrapper with right-fade scroll indicator on mobile */}
+        <div className="relative w-full overflow-hidden sm:overflow-visible shrink-0 lg:w-auto">
+          <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold overflow-x-auto max-w-full scrollbar-none pr-8 sm:pr-1 shrink-0">
+            <button
+              onClick={() => changeTab('rental')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'rental' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Sewa Tabung
+            </button>
+            <button
+              onClick={() => changeTab('accessory-rental')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'accessory-rental' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Sewa Aksesoris
+            </button>
+            <button
+              onClick={() => changeTab('return')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'return' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Pengembalian
+            </button>
+            <button
+              onClick={() => changeTab('sales')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'sales' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Kasir POS
+            </button>
+            <button
+              onClick={() => changeTab('restock')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'restock' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Restock Supplier
+            </button>
+            <button
+              onClick={() => changeTab('refill')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeTab === 'refill' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              Refill Vendor
+            </button>
+          </div>
+          {/* Scroll fade indicator for mobile only */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
         </div>
       </div>
 

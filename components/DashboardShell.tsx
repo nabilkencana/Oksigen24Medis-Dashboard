@@ -408,7 +408,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
               <div className="h-16 flex items-center justify-between px-6 border-b border-border/60">
                 <div className="flex items-center gap-3">
                   <img src="/logo-removebg-preview.png" alt="Website Logo" className="h-8 w-8 object-contain" />
-                  <h1 className="font-bold text-sm text-foreground">Oksigen24Medis</h1>
+                  <h1 className="font-bold text-sm text-foreground">Oksigen Medis 24 Jam</h1>
                 </div>
                 <button
                   onClick={() => setIsMobileOpen(false)}

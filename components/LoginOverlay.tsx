@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, AlertCircle, ArrowRight, Activity, ShieldCheck, FileText, Package, Sun, Moon } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, Activity, ShieldCheck, FileText, Package, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import { BASE_URL } from '../context/apiClient';
 
 interface LoginOverlayProps {
@@ -22,6 +22,7 @@ export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Detect initial theme on mount
   useEffect(() => {
@@ -180,13 +181,20 @@ export default function LoginOverlay({ onLoginSuccess }: LoginOverlayProps) {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="••••••••"
-                    className="w-full h-11 pl-11 pr-4 bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-sm focus:outline-none transition-all text-foreground placeholder:text-muted-foreground/50"
+                    className="w-full h-11 pl-11 pr-12 bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-sm focus:outline-none transition-all text-foreground placeholder:text-muted-foreground/50"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/75 hover:text-foreground transition-colors cursor-pointer focus:outline-none p-1 rounded-md"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 

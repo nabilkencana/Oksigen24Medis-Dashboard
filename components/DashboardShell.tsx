@@ -52,14 +52,14 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const { theme, toggleTheme, customers, vendors, cylinders, products, expenses, user, logout } = useData();
 
   const getRoleLabel = (usr: any) => {
-    if (!usr) return 'Admin Role';
+    if (!usr) return 'Admin';
     const roleVal = usr.role?.name || usr.role || 'ADMIN';
     const r = String(roleVal).toUpperCase();
-    if (r === 'OWNER') return 'Owner Role';
-    if (r === 'ADMIN') return 'Admin Role';
-    if (r === 'FINANCE') return 'Finance Role';
-    if (r === 'WAREHOUSE') return 'Warehouse Role';
-    return `${roleVal} Role`;
+    if (r === 'OWNER') return 'Owner';
+    if (r === 'ADMIN') return 'Admin';
+    if (r === 'FINANCE') return 'Keuangan';
+    if (r === 'WAREHOUSE') return 'Staf Gudang';
+    return roleVal;
   };
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);

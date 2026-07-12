@@ -14,6 +14,15 @@ import { Shield, Users, Save, Check, User, Eye, EyeOff, Plus, Edit2, Trash2 } fr
 type TabType = 'users' | 'roles' | 'profile';
 
 export default function SettingsPage() {
+  const getIndonesianRole = (role: string) => {
+    const r = String(role).toUpperCase();
+    if (r === 'OWNER') return 'Owner';
+    if (r === 'ADMIN') return 'Admin';
+    if (r === 'FINANCE') return 'Keuangan';
+    if (r === 'WAREHOUSE') return 'Staf Gudang';
+    return role;
+  };
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabType) || 'users';
@@ -238,7 +247,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col items-end gap-1">
-                          <span className="font-semibold text-muted-foreground">{usr.role}</span>
+                          <span className="font-semibold text-muted-foreground">{getIndonesianRole(usr.role)}</span>
                           <Badge variant={usr.status === 'Active' ? 'success' : 'secondary'}>
                             {usr.status === 'Active' ? 'AKTIF' : 'NON-AKTIF'}
                           </Badge>
@@ -369,7 +378,7 @@ export default function SettingsPage() {
                 <div className="border-t border-border pt-4 flex justify-between items-center">
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">Tingkat Jabatan Anda:</span>
-                    <Badge variant="secondary">{profileForm.role}</Badge>
+                    <Badge variant="secondary">{getIndonesianRole(profileForm.role)}</Badge>
                   </div>
                   <Button type="submit" disabled={isSaving} className="flex items-center gap-1.5">
                     <Save className="w-4 h-4" /> {isSaving ? 'Menyimpan...' : 'Perbarui Akun Saya'}

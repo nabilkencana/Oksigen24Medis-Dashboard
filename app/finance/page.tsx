@@ -257,7 +257,7 @@ export default function FinancePage() {
                     <TrendingUp className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="mt-2">
+                <div>
                   <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.totalIncome)}</p>
                   <p className="text-4xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">Uang masuk persewaan & ritel</p>
                 </div>
@@ -273,7 +273,7 @@ export default function FinancePage() {
                     <TrendingDown className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="mt-2">
+                <div>
                   <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.totalExpense)}</p>
                   <p className="text-4xs text-rose-600 dark:text-rose-400 mt-1 font-medium">{formatRupiah(financeSummary.pendingExpenses)} Pending approval</p>
                 </div>
@@ -289,7 +289,7 @@ export default function FinancePage() {
                     <DollarSign className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="mt-2">
+                <div>
                   <p className="text-2xl font-extrabold text-foreground tracking-tight">{formatRupiah(financeSummary.netProfit)}</p>
                   <p className="text-4xs text-blue-600 dark:text-blue-400 mt-1 font-medium">Selisih kas masuk - kas keluar</p>
                 </div>
@@ -305,7 +305,7 @@ export default function FinancePage() {
                     <Wallet className="w-4 h-4" />
                   </div>
                 </div>
-                <div className="mt-2">
+                <div>
                   <p className="text-2xl font-extrabold text-foreground tracking-tight">{financeSummary.profitMargin.toFixed(1)}%</p>
                   <p className="text-4xs text-amber-600 dark:text-amber-400 mt-1 font-medium">Rasio efisiensi bersih usaha</p>
                 </div>

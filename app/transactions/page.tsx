@@ -1218,7 +1218,7 @@ export default function TransactionsPage() {
                 ) : (
                   <>
                     <UserPlus className="w-3.5 h-3.5" />
-                    <span>➕ Pelanggan Baru</span>
+                    <span>Pelanggan Baru</span>
                   </>
                 )}
               </button>

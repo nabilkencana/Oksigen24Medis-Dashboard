@@ -713,6 +713,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addCylinder = async (cyl: any) => {
     const ot = oxygenTypes.find(t => t.name === cyl.oxygenType) || oxygenTypes[0];
+    if (!ot) {
+      throw new Error('Grade/tipe kandungan gas belum dimuat atau kosong di database. Silakan muat ulang halaman.');
+    }
     await fetchApi('/inventory/cylinders', {
       method: 'POST',
       body: JSON.stringify({
@@ -720,7 +723,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         capacity: Number(cyl.capacity) || 40,
         size: cyl.size,
         status: cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase(),
-        oxygenTypeId: ot?.id
+        oxygenTypeId: ot.id
       })
     });
     await refreshAllData();

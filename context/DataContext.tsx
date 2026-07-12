@@ -108,6 +108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const isRefreshingRef = useRef(false);
   const [user, setUser] = useState<any | null>(null);
   const [isClientLoaded, setIsClientLoaded] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const [data, setData] = useState<{
     customers: Customer[];
@@ -610,6 +611,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    setIsLoggingOut(true);
     if (token) {
       try {
         await fetchApi('/auth/logout', { method: 'POST' });
@@ -624,6 +626,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setData(null);
+    // Wait for 800ms to show the loading screen transition
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setIsLoggingOut(false);
   };
 
   const toggleTheme = () => {
@@ -1014,6 +1019,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('oksigen24_user', JSON.stringify(updatedUser));
     await refreshAllData();
   };
+
+  if (isLoggingOut) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 font-semibold uppercase tracking-wider">Keluar dari sistem...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isClientLoaded) {
     return (

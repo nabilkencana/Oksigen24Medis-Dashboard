@@ -5,9 +5,11 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useData } from '../../context/DataContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Input, Select, Textarea } from '../../components/ui/Input';
+import { Input, Select } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
-import { Shield, Users, Save, Check, User, Eye, EyeOff } from 'lucide-react';
+import { Drawer } from '../../components/ui/Drawer';
+import { Modal } from '../../components/ui/Modal';
+import { Shield, Users, Save, Check, User, Eye, EyeOff, Plus, Edit2, Trash2 } from 'lucide-react';
 
 type TabType = 'users' | 'roles' | 'profile';
 
@@ -16,13 +18,49 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as TabType) || 'users';
   
-  const { theme, toggleTheme, user } = useData();
+  const { 
+    user, 
+    users = [], 
+    addEmployee, 
+    updateEmployee, 
+    deleteEmployee, 
+    updateProfile 
+  } = useData();
+
+  const roleName = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
+  const isOwnerOrAdmin = roleName === 'OWNER' || roleName === 'ADMIN';
+  const isOwner = roleName === 'OWNER';
+
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Drawer states for Employee Add/Edit
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'add' | 'edit'>('add');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [employeeForm, setEmployeeForm] = useState({
+    name: '',
+    email: '',
+    role: 'ADMIN',
+    password: '',
+    isActive: true
+  });
+
+  // Modal states for Employee Delete
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any | null>(null);
 
   useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
+    if (user) {
+      if (!isOwnerOrAdmin && initialTab !== 'profile') {
+        setActiveTab('profile');
+        router.replace('/settings?tab=profile');
+      } else {
+        setActiveTab(initialTab);
+      }
+    }
+  }, [initialTab, user, isOwnerOrAdmin]);
 
   const changeTab = (tab: TabType) => {
     setActiveTab(tab);
@@ -33,34 +71,93 @@ export default function SettingsPage() {
     name: 'Administrator Utama',
     email: 'admin@oksigen24jam.co.id',
     phone: '0811-9988-7766',
-    password: 'Password123!',
+    password: '',
     role: 'Admin'
   });
 
   useEffect(() => {
     if (user) {
       setProfileForm({
-        name: user.name || 'Administrator Utama',
+        name: user.fullName || user.name || 'Administrator Utama',
         email: user.email || 'admin@oksigen24jam.co.id',
         phone: user.phone || '0811-9988-7766',
-        password: 'Password123!',
+        password: '',
         role: (user.role && typeof user.role === 'object' ? user.role.name : user.role) || 'Admin'
       });
     }
   }, [user]);
 
-  const handleSave = (e: React.FormEvent, msg: string) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(msg);
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await updateProfile(profileForm);
+      alert('Data profil personal Anda berhasil diperbarui!');
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat memperbarui profil');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  // Mock User List
-  const erpUsers = [
-    { id: 'USR-01', name: 'Nabil Kencana', email: 'nabil@oksigen24jam.co.id', role: 'Owner', status: 'Active' },
-    { id: 'USR-02', name: 'Ahmad Faisal', email: 'faisal@oksigen24jam.co.id', role: 'Admin', status: 'Active' },
-    { id: 'USR-03', name: 'Sari Indah', email: 'sari@oksigen24jam.co.id', role: 'Finance', status: 'Active' },
-    { id: 'USR-04', name: 'Eko Budiman', email: 'eko@oksigen24jam.co.id', role: 'Warehouse Staff', status: 'Active' }
-  ];
+  const openAddDrawer = () => {
+    setDrawerMode('add');
+    setSelectedEmployeeId(null);
+    setEmployeeForm({
+      name: '',
+      email: '',
+      role: 'ADMIN',
+      password: '',
+      isActive: true
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const openEditDrawer = (emp: any) => {
+    setDrawerMode('edit');
+    setSelectedEmployeeId(emp.id);
+    setEmployeeForm({
+      name: emp.name,
+      email: emp.email,
+      role: emp.role,
+      password: '',
+      isActive: emp.status === 'Active'
+    });
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      if (drawerMode === 'add') {
+        await addEmployee(employeeForm);
+        alert('Karyawan berhasil ditambahkan!');
+      } else if (selectedEmployeeId) {
+        await updateEmployee(selectedEmployeeId, employeeForm);
+        alert('Data karyawan berhasil diperbarui!');
+      }
+      setIsDrawerOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!employeeToDelete) return;
+    try {
+      await deleteEmployee(employeeToDelete.id);
+      alert('Karyawan berhasil dinonaktifkan / dihapus!');
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan');
+    } finally {
+      setEmployeeToDelete(null);
+    }
+  };
 
   // Role permissions Matrix representation
   const modules = ['Pelanggan & Vendor', 'Tabung Oksigen', 'Penyewaan Tabung', 'Isi Ulang (Refill)', 'Kasir POS Ritel', 'Kas Pengeluaran', 'Pengaturan Akses'];
@@ -82,18 +179,22 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex gap-1 bg-muted/40 p-1 border border-border rounded-xl text-xs font-semibold shrink-0">
-          <button
-            onClick={() => changeTab('users')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'users' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Karyawan
-          </button>
-          <button
-            onClick={() => changeTab('roles')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'roles' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            Hak Akses
-          </button>
+          {isOwnerOrAdmin && (
+            <>
+              <button
+                onClick={() => changeTab('users')}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'users' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Karyawan
+              </button>
+              <button
+                onClick={() => changeTab('roles')}
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'roles' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Hak Akses
+              </button>
+            </>
+          )}
           <button
             onClick={() => changeTab('profile')}
             className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${activeTab === 'profile' ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'}`}
@@ -106,38 +207,74 @@ export default function SettingsPage() {
       <div className="min-w-0">
         
         {/* 1. USERS LIST */}
-        {activeTab === 'users' && (
+        {activeTab === 'users' && isOwnerOrAdmin && (
           <Card>
-            <CardHeader>
-              <CardTitle>Daftar Akun Karyawan</CardTitle>
-              <CardDescription>Manajemen data akun staf operasional sistem logistik oksigen.</CardDescription>
+            <CardHeader className="flex flex-row justify-between items-center space-y-0 p-6 border-b border-border/40">
+              <div>
+                <CardTitle>Daftar Akun Karyawan</CardTitle>
+                <CardDescription>Manajemen data akun staf operasional sistem logistik oksigen.</CardDescription>
+              </div>
+              <Button onClick={openAddDrawer} className="flex items-center gap-1.5 text-xs">
+                <Plus className="w-3.5 h-3.5" /> Tambah Karyawan
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/60 text-xs">
-                {erpUsers.map(usr => (
-                  <div key={usr.id} className="flex justify-between items-center p-4">
-                    <div className="flex gap-3 items-center">
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground select-none">
-                        {usr.name.substring(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground">{usr.name}</p>
-                        <p className="text-muted-foreground mt-0.5">{usr.email} • ID: {usr.id}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-semibold text-muted-foreground">{usr.role}</span>
-                      <Badge variant="success">AKTIF</Badge>
-                    </div>
+                {users.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground font-medium">
+                    Tidak ada data karyawan ditemukan.
                   </div>
-                ))}
+                ) : (
+                  users.map(usr => (
+                    <div key={usr.id} className="flex justify-between items-center p-4">
+                      <div className="flex gap-3 items-center">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold select-none">
+                          {(usr.name || '').substring(0,2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">{usr.name}</p>
+                          <p className="text-muted-foreground mt-0.5">{usr.email} • ID: {usr.id}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="font-semibold text-muted-foreground">{usr.role}</span>
+                          <Badge variant={usr.status === 'Active' ? 'success' : 'secondary'}>
+                            {usr.status === 'Active' ? 'AKTIF' : 'NON-AKTIF'}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 border-l border-border pl-3">
+                          <button
+                            onClick={() => openEditDrawer(usr)}
+                            className="p-1.5 rounded-lg border border-border hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                            title="Edit Karyawan"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          {isOwner && (
+                            <button
+                              onClick={() => {
+                                setEmployeeToDelete(usr);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg border border-border hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 cursor-pointer transition-colors"
+                              title="Hapus Karyawan"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* 2. ROLES AND PERMISSIONS MATRIX */}
-        {activeTab === 'roles' && (
+        {activeTab === 'roles' && isOwnerOrAdmin && (
           <Card>
             <CardHeader>
               <CardTitle>Matriks Peran & Otorisasi Hak Akses</CardTitle>
@@ -186,13 +323,14 @@ export default function SettingsPage() {
               <CardDescription>Konfigurasi data login Administrator dan perubahan kata sandi.</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={e => handleSave(e, 'Data profil personal Anda berhasil diperbarui!')} className="space-y-4">
+              <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Nama Lengkap *"
                     id="settUserName"
                     value={profileForm.name}
                     onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
+                    required
                   />
                   <Input
                     label="Alamat Email Kredensial *"
@@ -200,6 +338,7 @@ export default function SettingsPage() {
                     type="email"
                     value={profileForm.email}
                     onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -211,7 +350,7 @@ export default function SettingsPage() {
                   />
                   <div className="relative flex items-end">
                     <Input
-                      label="Ubah Kata Sandi (Password)"
+                      label="Ubah Kata Sandi (Kosongkan jika tidak diubah)"
                       id="settUserPass"
                       type={showPassword ? 'text' : 'password'}
                       value={profileForm.password}
@@ -232,8 +371,8 @@ export default function SettingsPage() {
                     <span className="text-muted-foreground">Tingkat Jabatan Anda:</span>
                     <Badge variant="secondary">{profileForm.role}</Badge>
                   </div>
-                  <Button type="submit" className="flex items-center gap-1.5">
-                    <Save className="w-4 h-4" /> Perbarui Akun Saya
+                  <Button type="submit" disabled={isSaving} className="flex items-center gap-1.5">
+                    <Save className="w-4 h-4" /> {isSaving ? 'Menyimpan...' : 'Perbarui Akun Saya'}
                   </Button>
                 </div>
               </form>
@@ -242,6 +381,93 @@ export default function SettingsPage() {
         )}
 
       </div>
+
+      {/* Drawer: Add/Edit Employee */}
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title={drawerMode === 'add' ? 'Tambah Akun Karyawan Baru' : 'Edit Akun Karyawan'}
+      >
+        <form onSubmit={handleSaveEmployee} className="space-y-4 text-xs">
+          <Input
+            label="Nama Lengkap *"
+            id="empName"
+            value={employeeForm.name}
+            onChange={e => setEmployeeForm({ ...employeeForm, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Alamat Email Kredensial *"
+            id="empEmail"
+            type="email"
+            value={employeeForm.email}
+            onChange={e => setEmployeeForm({ ...employeeForm, email: e.target.value })}
+            required
+            disabled={drawerMode === 'edit'}
+          />
+          <Select
+            label="Peran Kerja (Role) *"
+            id="empRole"
+            value={employeeForm.role}
+            onChange={e => setEmployeeForm({ ...employeeForm, role: e.target.value })}
+            options={[
+              { value: 'OWNER', label: 'Owner' },
+              { value: 'ADMIN', label: 'Admin' },
+              { value: 'FINANCE', label: 'Finance' },
+              { value: 'WAREHOUSE', label: 'Warehouse Staff' }
+            ]}
+          />
+
+          <Input
+            label={drawerMode === 'add' ? 'Kata Sandi (Password) *' : 'Ubah Kata Sandi (Kosongkan jika tidak diubah)'}
+            id="empPassword"
+            type="password"
+            value={employeeForm.password}
+            onChange={e => setEmployeeForm({ ...employeeForm, password: e.target.value })}
+            required={drawerMode === 'add'}
+          />
+
+          {drawerMode === 'edit' && (
+            <Select
+              label="Status Akun"
+              id="empStatus"
+              value={employeeForm.isActive ? 'true' : 'false'}
+              onChange={e => setEmployeeForm({ ...employeeForm, isActive: e.target.value === 'true' })}
+              options={[
+                { value: 'true', label: 'Aktif' },
+                { value: 'false', label: 'Non-Aktif' }
+              ]}
+            />
+          )}
+
+          <div className="border-t border-border pt-4 flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setIsDrawerOpen(false)}
+              disabled={isSaving}
+            >
+              Batal
+            </Button>
+            <Button type="submit" className="flex-1" disabled={isSaving}>
+              {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Hapus Karyawan"
+        description={`Apakah Anda yakin ingin menghapus / menonaktifkan akun karyawan "${employeeToDelete?.name}"?`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="destructive"
+      />
 
     </div>
   );

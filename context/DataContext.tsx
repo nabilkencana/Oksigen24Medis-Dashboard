@@ -30,6 +30,7 @@ interface DataContextType {
   transactions: Transaction[];
   expenses: Expense[];
   oxygenTypes: any[];
+  users: any[];
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   user: any | null;
@@ -47,6 +48,10 @@ interface DataContextType {
   addProduct: (prod: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (id: string, prod: Partial<Product>) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  addEmployee: (emp: any) => Promise<void>;
+  updateEmployee: (id: string, emp: any) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
+  updateProfile: (profileForm: any) => Promise<void>;
   // Workflows
   createRental: (rentalData: { customerId: string; cylinderId: string; rentDate: string; returnDate: string; deposit: number; rentalFee: number; paymentMethod?: string; serviceType?: 'Kios' | 'Antar'; accessories?: Array<{ name: string; qty: number; fee: number; deposit: number }> }) => Promise<void>;
   returnRental: (rentalId: string, actualReturnDate: string, cylinderStatus: Cylinder['status']) => Promise<void>;
@@ -116,6 +121,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     sales: Sale[];
     expenses: Expense[];
     transactions: Transaction[];
+    users: any[];
   } | null>(null);
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -203,6 +209,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         incomesData,
         categoriesData,
         oxygenTypesData,
+        usersData,
       ] = await Promise.all([
         fetchApi('/inventory/customers?limit=100'),                                    // all roles can read
         isFinance ? safe(() => fetchApi('/inventory/vendors?limit=100')) : fetchApi('/inventory/vendors?limit=100'),
@@ -216,6 +223,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         isWarehouse ? safe(() => fetchApi('/finance/incomes?limit=100')) : fetchApi('/finance/incomes?limit=100'),
         fetchApi('/inventory/categories?limit=100'),                                   // all roles can read
         fetchApi('/inventory/oxygen-types?limit=100'),                                 // all roles can read
+        isOwnerOrAdmin ? safe(() => fetchApi('/users?limit=100')) : Promise.resolve(null),
       ]);
 
       setCategories((categoriesData?.items) || []);
@@ -489,6 +497,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
 
+      const mappedUsers = ((usersData?.items) || []).map((u: any) => ({
+        id: u.id,
+        name: u.fullName,
+        email: u.email,
+        role: u.role?.name || 'Admin',
+        status: u.isActive ? 'Active' : 'Inactive',
+      }));
+
       setData({
         customers: mappedCustomers,
         vendors: mappedVendors,
@@ -500,7 +516,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         purchases: mappedPurchases,
         sales: mappedSales,
         expenses: mappedExpenses,
-        transactions: allTransactions
+        transactions: allTransactions,
+        users: mappedUsers
       });
     } catch (e) {
       console.error('Failed to load live ERP data:', e);
@@ -924,6 +941,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Direct approval from backend upon creation
   };
 
+  const addEmployee = async (emp: any) => {
+    await fetchApi('/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        fullName: emp.name,
+        email: emp.email,
+        password: emp.password,
+        role: emp.role,
+      })
+    });
+    await refreshAllData();
+  };
+
+  const updateEmployee = async (id: string, emp: any) => {
+    const payload: any = {};
+    if (emp.name !== undefined) payload.fullName = emp.name;
+    if (emp.email !== undefined) payload.email = emp.email;
+    if (emp.role !== undefined) payload.role = emp.role;
+    if (emp.isActive !== undefined) payload.isActive = emp.isActive;
+    if (emp.password) payload.password = emp.password;
+
+    await fetchApi(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+    await refreshAllData();
+  };
+
+  const deleteEmployee = async (id: string) => {
+    await fetchApi(`/users/${id}`, {
+      method: 'DELETE'
+    });
+    await refreshAllData();
+  };
+
+  const updateProfile = async (profileForm: any) => {
+    const payload: any = {
+      fullName: profileForm.name,
+      email: profileForm.email,
+    };
+    if (profileForm.password) {
+      payload.password = profileForm.password;
+    }
+
+    const updatedUser = await fetchApi('/users/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+
+    setUser(updatedUser);
+    localStorage.setItem('oksigen24_user', JSON.stringify(updatedUser));
+    await refreshAllData();
+  };
+
   if (!isClientLoaded) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
@@ -979,7 +1050,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         createPurchase,
         createSale,
         createExpense,
-        approveExpense
+        approveExpense,
+        addEmployee,
+        updateEmployee,
+        deleteEmployee,
+        updateProfile
       }}
     >
       {children}

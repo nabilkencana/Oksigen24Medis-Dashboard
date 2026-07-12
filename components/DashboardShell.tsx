@@ -246,13 +246,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                 <p className="text-4xs text-muted-foreground leading-none font-bold uppercase">{getRoleLabel(user)}</p>
               </div>
             </div>
-            <button
-              onClick={() => router.push('/settings')}
-              className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Settings"
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => router.push('/settings')}
+                className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Pengaturan"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-lg border border-border bg-card hover:bg-rose-500/10 text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
+                title="Keluar Akun"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -450,13 +459,37 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
               {/* Footer */}
               <div className="p-4 border-t border-border/60 bg-muted/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">
-                    {user?.fullName ? user.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase shadow-inner">
+                      {user?.fullName ? user.fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'AD'}
+                    </div>
+                    <div className="truncate w-28">
+                      <p className="text-xs font-semibold leading-tight truncate">{user?.fullName || 'Administrator'}</p>
+                      <p className="text-4xs text-muted-foreground leading-none font-bold uppercase">{getRoleLabel(user)}</p>
+                    </div>
                   </div>
-                  <div className="truncate w-36">
-                    <p className="text-xs font-semibold leading-none truncate">{user?.fullName || 'Administrator'}</p>
-                    <p className="text-4xs text-muted-foreground mt-0.5 uppercase font-bold">{getRoleLabel(user)}</p>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => {
+                        setIsMobileOpen(false);
+                        router.push('/settings');
+                      }}
+                      className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Pengaturan"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMobileOpen(false);
+                        logout();
+                      }}
+                      className="p-1.5 rounded-lg border border-border bg-card hover:bg-rose-500/10 text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
+                      title="Keluar Akun"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               </div>

@@ -520,7 +520,7 @@ export default function InventoryPage() {
                   <TableHead>{activeTab === 'accessories' ? 'ID Aksesoris' : 'ID Tabung'}</TableHead>
                   <TableHead>Nomor Serial (SN)</TableHead>
                   <TableHead>{activeTab === 'accessories' ? 'Satuan' : 'Ukuran'}</TableHead>
-                  <TableHead>{activeTab === 'accessories' ? 'Nama Aksesoris' : 'Tipe Gas'}</TableHead>
+                  {activeTab === 'accessories' && <TableHead>Nama Aksesoris</TableHead>}
                   <TableHead>Inspeksi Terakhir</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
@@ -532,43 +532,47 @@ export default function InventoryPage() {
                     <TableCell className="font-bold text-foreground">{c.id}</TableCell>
                     <TableCell className="font-semibold text-foreground">{c.serialNo}</TableCell>
                     <TableCell>{c.size}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{c.oxygenType}</Badge>
-                    </TableCell>
+                    {activeTab === 'accessories' && (
+                      <TableCell>
+                        <Badge variant="outline">{c.oxygenType}</Badge>
+                      </TableCell>
+                    )}
                     <TableCell>{c.lastInspection}</TableCell>
                     <TableCell>
                       <Badge variant={c.status === 'Available' ? 'success' : c.status === 'Rented' ? 'secondary' : c.status === 'At Vendor' ? 'info' : 'destructive'}>
                         {c.status === 'Available' ? 'Tersedia' : c.status === 'Rented' ? 'Disewa' : c.status === 'At Vendor' ? 'Di Vendor' : c.status === 'Empty' ? 'Kosong' : 'Maintenance'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCylinder(c)}>
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-2 text-rose-500 hover:bg-rose-500/10"
-                        disabled={deletingId !== null}
-                        onClick={async () => {
-                          if (confirm(activeTab === 'accessories' ? 'Hapus aksesoris ini?' : 'Hapus tabung ini?')) {
-                            setDeletingId(c.id);
-                            try {
-                              await deleteCylinder(c.id);
-                            } catch (err: any) {
-                              alert(err.message || 'Gagal menghapus.');
-                            } finally {
-                              setDeletingId(null);
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCylinder(c)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 text-rose-500 hover:bg-rose-500/10"
+                          disabled={deletingId !== null}
+                          onClick={async () => {
+                            if (confirm(activeTab === 'accessories' ? 'Hapus aksesoris ini?' : 'Hapus tabung ini?')) {
+                              setDeletingId(c.id);
+                              try {
+                                await deleteCylinder(c.id);
+                              } catch (err: any) {
+                                alert(err.message || 'Gagal menghapus.');
+                              } finally {
+                                setDeletingId(null);
+                              }
                             }
-                          }
-                        }}
-                      >
-                        {deletingId === c.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
+                          }}
+                        >
+                          {deletingId === c.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -605,34 +609,36 @@ export default function InventoryPage() {
                     <TableCell>{formatRupiah(p.cost)}</TableCell>
                     <TableCell>{formatRupiah(p.price)}</TableCell>
                     <TableCell className="text-emerald-500 font-bold">{formatRupiah(p.price - p.cost)}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditProduct(p)}>
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-2 text-rose-500 hover:bg-rose-500/10"
-                        disabled={deletingId !== null}
-                        onClick={async () => {
-                          if (confirm('Hapus produk ini?')) {
-                            setDeletingId(p.id);
-                            try {
-                              await deleteProduct(p.id);
-                            } catch (err: any) {
-                              alert(err.message || 'Gagal menghapus produk.');
-                            } finally {
-                              setDeletingId(null);
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditProduct(p)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 text-rose-500 hover:bg-rose-500/10"
+                          disabled={deletingId !== null}
+                          onClick={async () => {
+                            if (confirm('Hapus produk ini?')) {
+                              setDeletingId(p.id);
+                              try {
+                                await deleteProduct(p.id);
+                              } catch (err: any) {
+                                alert(err.message || 'Gagal menghapus produk.');
+                              } finally {
+                                setDeletingId(null);
+                              }
                             }
-                          }
-                        }}
-                      >
-                        {deletingId === p.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
+                          }}
+                        >
+                          {deletingId === p.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -665,34 +671,36 @@ export default function InventoryPage() {
                         {c.status === 'Active' ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCustomer(c)}>
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-2 text-rose-500 hover:bg-rose-500/10"
-                        disabled={deletingId !== null}
-                        onClick={async () => {
-                          if (confirm('Hapus pelanggan ini?')) {
-                            setDeletingId(c.id);
-                            try {
-                              await deleteCustomer(c.id);
-                            } catch (err: any) {
-                              alert(err.message || 'Gagal menghapus pelanggan.');
-                            } finally {
-                              setDeletingId(null);
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditCustomer(c)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 text-rose-500 hover:bg-rose-500/10"
+                          disabled={deletingId !== null}
+                          onClick={async () => {
+                            if (confirm('Hapus pelanggan ini?')) {
+                              setDeletingId(c.id);
+                              try {
+                                await deleteCustomer(c.id);
+                              } catch (err: any) {
+                                alert(err.message || 'Gagal menghapus pelanggan.');
+                              } finally {
+                                setDeletingId(null);
+                              }
                             }
-                          }
-                        }}
-                      >
-                        {deletingId === c.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
+                          }}
+                        >
+                          {deletingId === c.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -727,34 +735,36 @@ export default function InventoryPage() {
                         {v.status === 'Active' ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditVendor(v)}>
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="px-2 text-rose-500 hover:bg-rose-500/10"
-                        disabled={deletingId !== null}
-                        onClick={async () => {
-                          if (confirm('Hapus vendor ini?')) {
-                            setDeletingId(v.id);
-                            try {
-                              await deleteVendor(v.id);
-                            } catch (err: any) {
-                              alert(err.message || 'Gagal menghapus vendor.');
-                            } finally {
-                              setDeletingId(null);
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="outline" size="sm" className="px-2" onClick={() => loadEditVendor(v)}>
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 text-rose-500 hover:bg-rose-500/10"
+                          disabled={deletingId !== null}
+                          onClick={async () => {
+                            if (confirm('Hapus vendor ini?')) {
+                              setDeletingId(v.id);
+                              try {
+                                await deleteVendor(v.id);
+                              } catch (err: any) {
+                                alert(err.message || 'Gagal menghapus vendor.');
+                              } finally {
+                                setDeletingId(null);
+                              }
                             }
-                          }
-                        }}
-                      >
-                        {deletingId === v.id ? (
-                          <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3.5 h-3.5" />
-                        )}
-                      </Button>
+                          }}
+                        >
+                          {deletingId === v.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -35,6 +35,7 @@ export default function TransactionsPage() {
     refills,
     transactions,
     addCustomer,
+    addVendor,
     createRental,
     returnRental,
     sendToRefill,
@@ -89,6 +90,10 @@ export default function TransactionsPage() {
   const [refillLoadingId, setRefillLoadingId] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+  const [refillIsNewVendor, setRefillIsNewVendor] = useState(false);
+  const [refillNewVendorCompanyName, setRefillNewVendorCompanyName] = useState('');
+  const [refillNewVendorPhone, setRefillNewVendorPhone] = useState('');
+  const [refillNewVendorAddress, setRefillNewVendorAddress] = useState('');
   
   // POS Cart State
   const [posCustomer, setPosCustomer] = useState('');
@@ -371,20 +376,52 @@ export default function TransactionsPage() {
 
   const handleRefillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!refillForm.cylinderId || !refillForm.vendorId || !refillForm.sendDate) {
+    let targetVendorId = refillForm.vendorId;
+
+    if (refillIsNewVendor) {
+      if (!refillNewVendorCompanyName.trim() || !refillNewVendorPhone.trim()) {
+        alert('Harap isi semua kolom wajib untuk vendor baru.');
+        return;
+      }
+    } else {
+      if (!targetVendorId) {
+        alert('Harap pilih vendor refill.');
+        return;
+      }
+    }
+
+    if (!refillForm.cylinderId || !refillForm.sendDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
+
     setIsSaving(true);
     try {
+      if (refillIsNewVendor) {
+        // Create new vendor on the fly
+        const newVend = await addVendor({
+          companyName: refillNewVendorCompanyName.trim(),
+          name: refillNewVendorCompanyName.trim(),
+          phone: refillNewVendorPhone.trim(),
+          address: refillNewVendorAddress.trim(),
+          email: `${refillNewVendorCompanyName.toLowerCase().replace(/\s/g, '')}@vendor.com`,
+          status: 'Active'
+        });
+        targetVendorId = newVend.id;
+      }
+
       await sendToRefill({
         cylinderId: refillForm.cylinderId,
-        vendorId: refillForm.vendorId,
+        vendorId: targetVendorId,
         cost: Number(refillForm.cost) || 0,
         sendDate: refillForm.sendDate
       });
       setIsRefillDrawerOpen(false);
       setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+      setRefillIsNewVendor(false);
+      setRefillNewVendorCompanyName('');
+      setRefillNewVendorPhone('');
+      setRefillNewVendorAddress('');
     } catch (err: any) {
       alert(err.message || 'Gagal mengirim refill.');
     } finally {
@@ -633,23 +670,25 @@ export default function TransactionsPage() {
                               {r.status === 'Active' ? 'Aktif' : r.status === 'Overdue' ? 'Jatuh Tempo' : 'Selesai'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right space-x-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="px-2"
-                              onClick={() => { setSelectedRental(r); setIsDetailOpen(true); }}
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="px-2 text-emerald-500"
-                              onClick={() => { setSelectedRental(r); setIsPrintOpen(true); }}
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </Button>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-2"
+                                onClick={() => { setSelectedRental(r); setIsDetailOpen(true); }}
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-2 text-emerald-500"
+                                onClick={() => { setSelectedRental(r); setIsPrintOpen(true); }}
+                              >
+                                <Printer className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -1109,8 +1148,8 @@ export default function TransactionsPage() {
                     <TableHead>Tanggal Kirim</TableHead>
                     <TableHead>Tanggal Selesai</TableHead>
                     <TableHead>Ongkos Isi Ulang</TableHead>
-                    <TableHead>Status Antrean</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
+                    <TableHead className="whitespace-nowrap">Status Antrean</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1124,17 +1163,17 @@ export default function TransactionsPage() {
                         <TableCell>{ref.sendDate}</TableCell>
                         <TableCell>{ref.returnDate || '-'}</TableCell>
                         <TableCell>{formatRupiah(ref.cost)}</TableCell>
-                        <TableCell>
-                          <Badge variant={ref.status === 'Sent' ? 'warning' : 'success'}>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge variant={ref.status === 'Sent' ? 'warning' : 'success'} className="whitespace-nowrap">
                             {ref.status === 'Sent' ? 'Sedang Antre' : 'Diterima'}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right whitespace-nowrap">
                           {ref.status === 'Sent' ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-xs text-blue-600"
+                              className="text-xs text-blue-600 whitespace-nowrap"
                               disabled={refillLoadingId !== null}
                               onClick={async () => {
                                 setRefillLoadingId(ref.id);
@@ -1149,7 +1188,7 @@ export default function TransactionsPage() {
                               }}
                             >
                               {refillLoadingId === ref.id ? (
-                                <div className="flex items-center justify-center gap-1.5">
+                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                                   <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                                   <span>Memproses...</span>
                                 </div>
@@ -1279,7 +1318,7 @@ export default function TransactionsPage() {
                   const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
                   return {
                     value: c.id,
-                    label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                    label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
                     disabled: c.status !== 'Available'
                   };
                 })
@@ -1437,22 +1476,80 @@ export default function TransactionsPage() {
                 const canRefill = c.status === 'Empty' || c.status === 'Maintenance';
                 return {
                   value: c.id,
-                  label: `${c.serialNo} (${c.size}) - ${c.oxygenType} - [${statusLabel}]`,
+                  label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
                   disabled: !canRefill
                 };
               })
             ]}
           />
-          <Select
-            label="Pilih Mitra Vendor Refill *"
-            id="drawRefVend"
-            value={refillForm.vendorId}
-            onChange={e => setRefillForm({ ...refillForm, vendorId: e.target.value })}
-            options={[
-              { value: '', label: '-- Pilih Pabrik Vendor --' },
-              ...vendors.map(v => ({ value: v.id, label: v.companyName }))
-            ]}
-          />
+          <div className="space-y-1.5 w-full">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Pilih Mitra Vendor Refill *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setRefillIsNewVendor(!refillIsNewVendor);
+                  setRefillForm(prev => ({ ...prev, vendorId: '' }));
+                  setRefillNewVendorCompanyName('');
+                  setRefillNewVendorPhone('');
+                  setRefillNewVendorAddress('');
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+              >
+                {refillIsNewVendor ? (
+                  <>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Pilih dari Daftar</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Mitra Vendor Baru</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {refillIsNewVendor ? (
+              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                <Input
+                  label="Nama Perusahaan Vendor *"
+                  id="refillNewVendorCompanyName"
+                  placeholder="e.g. CV Oksigen Utama"
+                  value={refillNewVendorCompanyName}
+                  onChange={e => setRefillNewVendorCompanyName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="WhatsApp / No Telp *"
+                  id="refillNewVendorPhone"
+                  placeholder="e.g. 08123456789"
+                  value={refillNewVendorPhone}
+                  onChange={e => setRefillNewVendorPhone(e.target.value)}
+                  required
+                />
+                <Textarea
+                  label="Alamat Lengkap Vendor"
+                  id="refillNewVendorAddress"
+                  placeholder="Alamat kantor / pabrik pengisian..."
+                  value={refillNewVendorAddress}
+                  onChange={e => setRefillNewVendorAddress(e.target.value)}
+                />
+              </div>
+            ) : (
+              <Select
+                id="drawRefVend"
+                value={refillForm.vendorId}
+                onChange={e => setRefillForm({ ...refillForm, vendorId: e.target.value })}
+                options={[
+                  { value: '', label: '-- Pilih Pabrik Vendor --' },
+                  ...vendors.map(v => ({ value: v.id, label: v.companyName }))
+                ]}
+              />
+            )}
+          </div>
           <Input
             label="Biaya Pengisian Oksigen (Rp)"
             id="drawRefCost"

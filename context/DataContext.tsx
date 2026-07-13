@@ -39,7 +39,7 @@ interface DataContextType {
   addCustomer: (cust: Partial<Omit<Customer, 'id' | 'joinedDate' | 'balance'>> & { name: string; balance?: number }) => Promise<any>;
   updateCustomer: (id: string, cust: Partial<Customer>) => Promise<void>;
   deleteCustomer: (id: string) => Promise<void>;
-  addVendor: (vend: Omit<Vendor, 'id'>) => Promise<void>;
+  addVendor: (vend: Omit<Vendor, 'id'>) => Promise<any>;
   updateVendor: (id: string, vend: Partial<Vendor>) => Promise<void>;
   deleteVendor: (id: string) => Promise<void>;
   addCylinder: (cyl: Omit<Cylinder, 'id'>) => Promise<void>;
@@ -685,7 +685,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addVendor = async (vend: any) => {
-    await fetchApi('/inventory/vendors', {
+    const res = await fetchApi('/inventory/vendors', {
       method: 'POST',
       body: JSON.stringify({
         name: vend.companyName,
@@ -695,6 +695,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       })
     });
     await refreshAllData();
+    return res;
   };
 
   const updateVendor = async (id: string, vend: any) => {
@@ -720,24 +721,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addCylinder = async (cyl: any) => {
     const ot = oxygenTypes.find(t => t.name === cyl.oxygenType) || oxygenTypes[0];
-    if (!ot) {
-      throw new Error('Grade/tipe kandungan gas belum dimuat atau kosong di database. Silakan muat ulang halaman.');
-    }
+    const payload: any = {
+      serialNumber: cyl.serialNo,
+      capacity: Number(cyl.capacity) || 40,
+      size: cyl.size,
+      status: cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase(),
+    };
+    if (ot) payload.oxygenTypeId = ot.id;
+
     const res = await fetchApi('/inventory/cylinders', {
       method: 'POST',
-      body: JSON.stringify({
-        serialNumber: cyl.serialNo,
-        capacity: Number(cyl.capacity) || 40,
-        size: cyl.size,
-        status: cyl.status.toUpperCase() === 'AT VENDOR' ? 'AT_VENDOR' : cyl.status.toUpperCase(),
-        oxygenTypeId: ot.id
-      })
+      body: JSON.stringify(payload)
     });
 
     const newCylMapped: Cylinder = {
       id: res.id || `temp-${Date.now()}`,
       serialNo: res.serialNumber || cyl.serialNo,
-      oxygenType: res.oxygenType?.name || ot.name || cyl.oxygenType || 'Medical Oxygen 99.5%',
+      oxygenType: res.oxygenType?.name || ot?.name || cyl.oxygenType || 'Medical Oxygen',
       size: res.size || cyl.size,
       status: mapCylinderStatusToFrontend(res.status || cyl.status),
       lastInspection: new Date().toISOString().split('T')[0]

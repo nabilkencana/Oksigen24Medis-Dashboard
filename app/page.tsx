@@ -46,6 +46,7 @@ export default function Home() {
     transactions,
     stockMovements,
     addCustomer,
+    addVendor,
     createRental,
     sendToRefill,
     createSale,
@@ -62,6 +63,10 @@ export default function Home() {
   const [newCustPhone, setNewCustPhone] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+  const [isNewVendor, setIsNewVendor] = useState(false);
+  const [newVendorCompanyName, setNewVendorCompanyName] = useState('');
+  const [newVendorPhone, setNewVendorPhone] = useState('');
+  const [newVendorAddress, setNewVendorAddress] = useState('');
   const [saleForm, setSaleForm] = useState({ customerId: '', productId: '', qty: '1', paymentMethod: 'Tunai' as const, serviceType: 'Kios' as 'Kios' | 'Antar' });
   const [expenseForm, setExpenseForm] = useState({ category: 'Operational' as const, description: '', amount: '', date: '' });
 
@@ -214,20 +219,52 @@ export default function Home() {
 
   const handleRefillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!refillForm.cylinderId || !refillForm.vendorId || !refillForm.sendDate) {
+    let targetVendorId = refillForm.vendorId;
+
+    if (isNewVendor) {
+      if (!newVendorCompanyName.trim() || !newVendorPhone.trim()) {
+        alert('Harap isi semua kolom wajib untuk vendor baru.');
+        return;
+      }
+    } else {
+      if (!targetVendorId) {
+        alert('Harap pilih vendor refill.');
+        return;
+      }
+    }
+
+    if (!refillForm.cylinderId || !refillForm.sendDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
+
     setIsSaving(true);
     try {
+      if (isNewVendor) {
+        // Create new vendor on the fly
+        const newVend = await addVendor({
+          companyName: newVendorCompanyName.trim(),
+          name: newVendorCompanyName.trim(),
+          phone: newVendorPhone.trim(),
+          address: newVendorAddress.trim(),
+          email: `${newVendorCompanyName.toLowerCase().replace(/\s/g, '')}@vendor.com`,
+          status: 'Active'
+        });
+        targetVendorId = newVend.id;
+      }
+
       await sendToRefill({
         cylinderId: refillForm.cylinderId,
-        vendorId: refillForm.vendorId,
+        vendorId: targetVendorId,
         cost: Number(refillForm.cost) || 0,
         sendDate: refillForm.sendDate
       });
       setActiveDrawer(null);
       setRefillForm({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
+      setIsNewVendor(false);
+      setNewVendorCompanyName('');
+      setNewVendorPhone('');
+      setNewVendorAddress('');
     } catch (err: any) {
       alert(err.message || 'Gagal mengirim refill.');
     } finally {
@@ -639,7 +676,7 @@ export default function Home() {
                   const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
                   return {
                     value: c.id,
-                    label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                    label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
                     disabled: c.status !== 'Available'
                   };
                 })
@@ -738,22 +775,80 @@ export default function Home() {
                 const canRefill = c.status === 'Empty' || c.status === 'Maintenance';
                 return {
                   value: c.id,
-                  label: `${c.serialNo} (${c.size} - ${c.oxygenType}) - [${statusLabel}]`,
+                  label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
                   disabled: !canRefill
                 };
               })
             ]}
           />
-          <Select
-            label="Pilih Vendor Refill *"
-            id="refillVendor"
-            value={refillForm.vendorId}
-            onChange={e => setRefillForm({ ...refillForm, vendorId: e.target.value })}
-            options={[
-              { value: '', label: '-- Pilih Vendor Refill --' },
-              ...vendors.map(v => ({ value: v.id, label: v.companyName }))
-            ]}
-          />
+          <div className="space-y-1.5 w-full">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Pilih Mitra Vendor Refill *
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewVendor(!isNewVendor);
+                  setRefillForm(prev => ({ ...prev, vendorId: '' }));
+                  setNewVendorCompanyName('');
+                  setNewVendorPhone('');
+                  setNewVendorAddress('');
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+              >
+                {isNewVendor ? (
+                  <>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Pilih dari Daftar</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Mitra Vendor Baru</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {isNewVendor ? (
+              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                <Input
+                  label="Nama Perusahaan Vendor *"
+                  id="newVendorCompanyName"
+                  placeholder="e.g. CV Oksigen Utama"
+                  value={newVendorCompanyName}
+                  onChange={e => setNewVendorCompanyName(e.target.value)}
+                  required
+                />
+                <Input
+                  label="WhatsApp / No Telp *"
+                  id="newVendorPhone"
+                  placeholder="e.g. 08123456789"
+                  value={newVendorPhone}
+                  onChange={e => setNewVendorPhone(e.target.value)}
+                  required
+                />
+                <Textarea
+                  label="Alamat Lengkap Vendor"
+                  id="newVendorAddress"
+                  placeholder="Alamat kantor / pabrik pengisian..."
+                  value={newVendorAddress}
+                  onChange={e => setNewVendorAddress(e.target.value)}
+                />
+              </div>
+            ) : (
+              <Select
+                id="refillVendor"
+                value={refillForm.vendorId}
+                onChange={e => setRefillForm({ ...refillForm, vendorId: e.target.value })}
+                options={[
+                  { value: '', label: '-- Pilih Vendor Refill --' },
+                  ...vendors.map(v => ({ value: v.id, label: v.companyName }))
+                ]}
+              />
+            )}
+          </div>
           <Input
             label="Biaya Refill Oksigen (Rp) *"
             id="refillCost"

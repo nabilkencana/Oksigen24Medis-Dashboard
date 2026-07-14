@@ -36,6 +36,7 @@ export default function TransactionsPage() {
     transactions,
     addCustomer,
     addVendor,
+    addCylinder,
     createRental,
     returnRental,
     sendToRefill,
@@ -87,6 +88,9 @@ export default function TransactionsPage() {
   const [rentNewCustName, setRentNewCustName] = useState('');
   const [rentNewCustPhone, setRentNewCustPhone] = useState('');
   const [rentNewCustAddress, setRentNewCustAddress] = useState('');
+  const [rentIsNewCylinder, setRentIsNewCylinder] = useState(false);
+  const [rentNewCylinderSerialNo, setRentNewCylinderSerialNo] = useState('');
+  const [rentNewCylinderSize, setRentNewCylinderSize] = useState<'1m3' | '2m3' | '6m3'>('1m3');
   const [refillLoadingId, setRefillLoadingId] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ rentalId: '', returnDate: '', condition: 'Available' as 'Available' | 'Maintenance' });
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
@@ -303,6 +307,7 @@ export default function TransactionsPage() {
     e.preventDefault();
     
     let targetCustomerId = rentalForm.customerId;
+    let targetCylinderId = rentalForm.cylinderId;
 
     if (rentIsNewCustomer) {
       if (!rentNewCustName.trim() || !rentNewCustPhone.trim() || !rentNewCustAddress.trim()) {
@@ -316,7 +321,19 @@ export default function TransactionsPage() {
       }
     }
 
-    if (!rentalForm.cylinderId || !rentalForm.rentDate || !rentalForm.returnDate) {
+    if (rentIsNewCylinder) {
+      if (!rentNewCylinderSerialNo.trim()) {
+        alert('Harap isi nomor serial untuk tabung baru.');
+        return;
+      }
+    } else {
+      if (!targetCylinderId) {
+        alert('Harap pilih tabung oksigen.');
+        return;
+      }
+    }
+
+    if (!rentalForm.rentDate || !rentalForm.returnDate) {
       alert('Harap isi semua kolom wajib.');
       return;
     }
@@ -333,9 +350,21 @@ export default function TransactionsPage() {
         targetCustomerId = newCust.id;
       }
 
+      if (rentIsNewCylinder) {
+        // Create new cylinder on the fly
+        const newCyl = await addCylinder({
+          serialNo: rentNewCylinderSerialNo.trim(),
+          size: rentNewCylinderSize,
+          oxygenType: 'Medical Oxygen 99.5%',
+          lastInspection: new Date().toISOString().split('T')[0],
+          status: 'Available'
+        });
+        targetCylinderId = newCyl.id;
+      }
+
       await createRental({
         customerId: targetCustomerId,
-        cylinderId: rentalForm.cylinderId,
+        cylinderId: targetCylinderId,
         rentDate: rentalForm.rentDate,
         returnDate: rentalForm.returnDate,
         deposit: Number(rentalForm.deposit) || 0,
@@ -349,6 +378,9 @@ export default function TransactionsPage() {
       setRentNewCustName('');
       setRentNewCustPhone('');
       setRentNewCustAddress('');
+      setRentIsNewCylinder(false);
+      setRentNewCylinderSerialNo('');
+      setRentNewCylinderSize('1m3');
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -1236,7 +1268,7 @@ export default function TransactionsPage() {
           <div className="space-y-1.5 w-full">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Customer *
+                Pelanggan *
               </label>
               <button
                 type="button"
@@ -1302,28 +1334,83 @@ export default function TransactionsPage() {
               />
             )}
           </div>
-          <Select
-            label={activeTab === 'accessory-rental' ? "Pilih Aksesoris *" : "Pilih Tabung Oksigen *"}
-            id="drawRentCyl"
-            value={rentalForm.cylinderId}
-            onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
-            options={[
-              { value: '', label: activeTab === 'accessory-rental' ? '-- Pilih Aksesoris --' : '-- Pilih Tabung --' },
-              ...cylinders
-                .filter(c => {
-                  const isAcc = isAccessoryAsset(c.serialNo, c.size);
-                  return activeTab === 'accessory-rental' ? isAcc : !isAcc;
-                })
-                .map(c => {
-                  const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
-                  return {
-                    value: c.id,
-                    label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
-                    disabled: c.status !== 'Available'
-                  };
-                })
-            ]}
-          />
+          <div className="space-y-1.5 w-full">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {activeTab === 'accessory-rental' ? "Pilih Aksesoris *" : "Pilih Tabung Oksigen *"}
+              </label>
+              {activeTab === 'rental' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRentIsNewCylinder(!rentIsNewCylinder);
+                    setRentalForm(prev => ({ ...prev, cylinderId: '' }));
+                    setRentNewCylinderSerialNo('');
+                    setRentNewCylinderSize('1m3');
+                  }}
+                  className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+                >
+                  {rentIsNewCylinder ? (
+                    <>
+                      <Database className="w-3.5 h-3.5" />
+                      <span>Pilih dari Daftar</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tabung Baru</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {rentIsNewCylinder && activeTab === 'rental' ? (
+              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                <Input
+                  label="Nomor Serial Tabung (SN) *"
+                  id="rentNewCylinderSerialNo"
+                  placeholder="e.g. SN-OX-9999"
+                  value={rentNewCylinderSerialNo}
+                  onChange={e => setRentNewCylinderSerialNo(e.target.value)}
+                  required
+                />
+                <Select
+                  label="Ukuran Volume Tabung *"
+                  id="rentNewCylinderSize"
+                  value={rentNewCylinderSize}
+                  onChange={e => setRentNewCylinderSize(e.target.value as any)}
+                  options={[
+                    { value: '1m3', label: '1 m³' },
+                    { value: '2m3', label: '2 m³' },
+                    { value: '6m3', label: '6 m³' }
+                  ]}
+                />
+              </div>
+            ) : (
+              <Select
+                id="drawRentCyl"
+                value={rentalForm.cylinderId}
+                onChange={e => setRentalForm({ ...rentalForm, cylinderId: e.target.value })}
+                options={[
+                  { value: '', label: activeTab === 'accessory-rental' ? '-- Pilih Aksesoris --' : '-- Pilih Tabung --' },
+                  ...cylinders
+                    .filter(c => {
+                      const isAcc = isAccessoryAsset(c.serialNo, c.size);
+                      return activeTab === 'accessory-rental' ? isAcc : !isAcc;
+                    })
+                    .map(c => {
+                      const statusLabel = c.status === 'Available' ? 'Tersedia' : c.status;
+                      return {
+                        value: c.id,
+                        label: `${c.serialNo} (${c.size}) - [${statusLabel}]`,
+                        disabled: c.status !== 'Available'
+                      };
+                    })
+                ]}
+              />
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Tanggal Pinjam *"

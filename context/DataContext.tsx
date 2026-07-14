@@ -42,7 +42,7 @@ interface DataContextType {
   addVendor: (vend: Omit<Vendor, 'id'>) => Promise<any>;
   updateVendor: (id: string, vend: Partial<Vendor>) => Promise<void>;
   deleteVendor: (id: string) => Promise<void>;
-  addCylinder: (cyl: Omit<Cylinder, 'id'>) => Promise<void>;
+  addCylinder: (cyl: Omit<Cylinder, 'id'>) => Promise<any>;
   updateCylinder: (id: string, cyl: Partial<Cylinder>) => Promise<void>;
   deleteCylinder: (id: string) => Promise<void>;
   addOxygenType: (ot: { name: string; purity: number; pricePerUnit: number; description?: string }) => Promise<any>;
@@ -720,7 +720,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addCylinder = async (cyl: any) => {
-    const ot = oxygenTypes.find(t => t.name === cyl.oxygenType) || oxygenTypes[0];
+    let ot = oxygenTypes.find(t => t.name === cyl.oxygenType);
+    if (!ot) {
+      // Find one that is an oxygen type, not an accessory/rental item (does not contain sewa/regulator/troli)
+      ot = oxygenTypes.find(t => {
+        const nameLower = t.name.toLowerCase();
+        return (nameLower.includes('oxygen') || nameLower.includes('oksigen') || nameLower.includes('medical')) &&
+               !nameLower.includes('sewa') &&
+               !nameLower.includes('regulator') &&
+               !nameLower.includes('troli');
+      });
+    }
+    if (!ot) {
+      // Fallback to first one
+      ot = oxygenTypes[0];
+    }
+    if (!ot) {
+      // If still not found (oxygenTypes is empty), dynamically create a default one
+      try {
+        ot = await addOxygenType({
+          name: cyl.oxygenType || 'Medical Oxygen',
+          purity: 99.5,
+          pricePerUnit: 0,
+          description: 'Oksigen Medis Standard'
+        });
+      } catch (e) {
+        console.error('Failed to create default oxygen type:', e);
+      }
+    }
+
     const payload: any = {
       serialNumber: cyl.serialNo,
       capacity: Number(cyl.capacity) || 40,
@@ -755,6 +783,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     refreshAllDataWithDelay();
+    return res;
   };
 
   const updateCylinder = async (id: string, cyl: any) => {

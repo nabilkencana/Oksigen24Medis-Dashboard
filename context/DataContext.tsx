@@ -873,11 +873,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addProduct = async (prod: any) => {
-    const matchedCategory = categories.find(c =>
+    let currentCategories = [...categories];
+    if (currentCategories.length === 0) {
+      try {
+        const cat1 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Consumables', description: 'Nasal cannulas, masks, tubes' })
+        });
+        const cat2 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Regulators', description: 'Oxygen regulators and flowmeters' })
+        });
+        const cat3 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Gas', description: 'Gas refill and supply' })
+        });
+        currentCategories = [cat1, cat2, cat3];
+        setCategories(currentCategories);
+      } catch (e) {
+        console.error('Failed to create default categories:', e);
+      }
+    }
+
+    const matchedCategory = currentCategories.find(c =>
       c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
       (prod.category === 'Peralatan' && c.name.toLowerCase().includes('regulator')) ||
       (prod.category === 'Aksesoris' && c.name.toLowerCase().includes('consumable'))
-    ) || categories[0];
+    ) || currentCategories[0];
 
     if (!matchedCategory) {
       throw new Error('Kategori produk belum dimuat atau kosong di database. Silakan muat ulang halaman.');
@@ -900,9 +922,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProduct = async (id: string, prod: any) => {
-    let matchedCategory = categories.find(cat => cat.name === prod.category);
+    let currentCategories = [...categories];
+    if (currentCategories.length === 0 && prod.category) {
+      try {
+        const cat1 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Consumables', description: 'Nasal cannulas, masks, tubes' })
+        });
+        const cat2 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Regulators', description: 'Oxygen regulators and flowmeters' })
+        });
+        const cat3 = await fetchApi('/inventory/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name: 'Gas', description: 'Gas refill and supply' })
+        });
+        currentCategories = [cat1, cat2, cat3];
+        setCategories(currentCategories);
+      } catch (e) {
+        console.error('Failed to create default categories:', e);
+      }
+    }
+
+    let matchedCategory = currentCategories.find(cat => cat.name === prod.category);
     if (!matchedCategory && prod.category) {
-      matchedCategory = categories.find(c =>
+      matchedCategory = currentCategories.find(c =>
         c.name.toLowerCase().includes(prod.category.toLowerCase()) ||
         (prod.category === 'Peralatan' && c.name.toLowerCase().includes('regulator')) ||
         (prod.category === 'Aksesoris' && c.name.toLowerCase().includes('consumable'))

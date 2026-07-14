@@ -32,7 +32,8 @@ import {
   User,
   Sun,
   Moon,
-  AlertTriangle
+  AlertTriangle,
+  HelpCircle
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -132,6 +133,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   // Breadcrumbs generator
   const getBreadcrumbs = () => {
     if (pathname === '/') return ['Dashboard'];
+    if (pathname === '/guide' || pathname.startsWith('/guide/')) return ['Panduan'];
 
     // Find matching link
     for (const group of menuStructure) {
@@ -233,6 +235,21 @@ export default function DashboardShell({ children }: { children: React.ReactNode
             </div>
           ))}
         </nav>
+
+        {/* Panduan Link - above footer */}
+        <div className="px-4 pb-2">
+          <Link
+            href="/guide"
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all group ${
+              pathname === '/guide' || pathname.startsWith('/guide')
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+            }`}
+          >
+            <HelpCircle className={`w-4 h-4 shrink-0 transition-transform ${pathname === '/guide' || pathname.startsWith('/guide') ? '' : 'group-hover:scale-110'}`} />
+            <span className="truncate">Panduan Penggunaan</span>
+          </Link>
+        </div>
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-border/60 bg-muted/20">
@@ -456,6 +473,22 @@ export default function DashboardShell({ children }: { children: React.ReactNode
                   </div>
                 ))}
               </nav>
+
+              {/* Panduan Link - Mobile */}
+              <div className="px-4 pb-2">
+                <Link
+                  href="/guide"
+                  onClick={() => setIsMobileOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                    pathname === '/guide' || pathname.startsWith('/guide')
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-accent hover:text-accent-foreground text-muted-foreground'
+                  }`}
+                >
+                  <HelpCircle className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Panduan Penggunaan</span>
+                </Link>
+              </div>
 
               {/* Footer */}
               <div className="p-4 border-t border-border/60 bg-muted/20">

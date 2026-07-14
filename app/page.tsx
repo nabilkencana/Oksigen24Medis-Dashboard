@@ -48,6 +48,8 @@ export default function Home() {
     addCustomer,
     addVendor,
     addCylinder,
+    addOxygenType,
+    oxygenTypes,
     createRental,
     sendToRefill,
     createSale,
@@ -65,7 +67,12 @@ export default function Home() {
   const [newCustAddress, setNewCustAddress] = useState('');
   const [isNewCylinder, setIsNewCylinder] = useState(false);
   const [newCylinderSerialNo, setNewCylinderSerialNo] = useState('');
-  const [newCylinderSize, setNewCylinderSize] = useState<'1m3' | '2m3' | '6m3'>('1m3');
+  const [newCylinderSize, setNewCylinderSize] = useState<'1m3' | '2m3' | '6m3' | 'Pcs'>('1m3');
+  const [newCylinderType, setNewCylinderType] = useState('');
+  const [showNewAccessoryTypeForm, setShowNewAccessoryTypeForm] = useState(false);
+  const [newAccessoryName, setNewAccessoryName] = useState('');
+  const [newAccessoryPricePerUnit, setNewAccessoryPricePerUnit] = useState('25000');
+  const [newAccessoryDesc, setNewAccessoryDesc] = useState('');
   const [refillForm, setRefillForm] = useState({ cylinderId: '', vendorId: '', cost: '', sendDate: '' });
   const [isNewVendor, setIsNewVendor] = useState(false);
   const [newVendorCompanyName, setNewVendorCompanyName] = useState('');
@@ -184,12 +191,25 @@ export default function Home() {
 
     if (isNewCylinder) {
       if (!newCylinderSerialNo.trim()) {
-        alert('Harap isi nomor serial untuk tabung baru.');
+        alert(activeDrawer === 'accessory-rental' ? 'Harap isi nomor serial untuk aksesoris baru.' : 'Harap isi nomor serial untuk tabung baru.');
         return;
+      }
+      if (activeDrawer === 'accessory-rental') {
+        if (showNewAccessoryTypeForm) {
+          if (!newAccessoryName.trim() || !newAccessoryPricePerUnit.trim()) {
+            alert('Harap isi nama dan harga sewa untuk tipe aksesoris baru.');
+            return;
+          }
+        } else {
+          if (!newCylinderType) {
+            alert('Harap pilih tipe aksesoris.');
+            return;
+          }
+        }
       }
     } else {
       if (!targetCylinderId) {
-        alert('Harap pilih tabung oksigen.');
+        alert(activeDrawer === 'accessory-rental' ? 'Harap pilih aksesoris.' : 'Harap pilih tabung oksigen.');
         return;
       }
     }
@@ -212,11 +232,31 @@ export default function Home() {
       }
 
       if (isNewCylinder) {
-        // Create new cylinder on the fly
+        let finalCylinderType = '';
+        if (activeDrawer === 'accessory-rental') {
+          if (showNewAccessoryTypeForm) {
+            let finalName = newAccessoryName.trim();
+            const lowerName = finalName.toLowerCase();
+            if (!lowerName.includes('sewa') && !lowerName.includes('regulator') && !lowerName.includes('troli')) {
+              finalName = `Sewa ${finalName}`;
+            }
+            const ot = await addOxygenType({
+              name: finalName,
+              purity: 0,
+              pricePerUnit: Number(newAccessoryPricePerUnit),
+              description: newAccessoryDesc.trim()
+            });
+            finalCylinderType = ot.name;
+          } else {
+            finalCylinderType = newCylinderType;
+          }
+        }
+
+        // Create new cylinder/accessory on the fly
         const newCyl = await addCylinder({
           serialNo: newCylinderSerialNo.trim(),
-          size: newCylinderSize,
-          oxygenType: 'Medical Oxygen 99.5%',
+          size: activeDrawer === 'accessory-rental' ? 'Pcs' : newCylinderSize,
+          oxygenType: activeDrawer === 'accessory-rental' ? finalCylinderType : 'Medical Oxygen 99.5%',
           lastInspection: new Date().toISOString().split('T')[0],
           status: 'Available'
         });
@@ -242,6 +282,11 @@ export default function Home() {
       setIsNewCylinder(false);
       setNewCylinderSerialNo('');
       setNewCylinderSize('1m3');
+      setNewCylinderType('');
+      setShowNewAccessoryTypeForm(false);
+      setNewAccessoryName('');
+      setNewAccessoryPricePerUnit('25000');
+      setNewAccessoryDesc('');
     } catch (err: any) {
       alert(err.message || 'Gagal membuat sewa.');
     } finally {
@@ -618,6 +663,14 @@ export default function Home() {
           setNewCustName('');
           setNewCustPhone('');
           setNewCustAddress('');
+          setIsNewCylinder(false);
+          setNewCylinderSerialNo('');
+          setNewCylinderSize('1m3');
+          setNewCylinderType('');
+          setShowNewAccessoryTypeForm(false);
+          setNewAccessoryName('');
+          setNewAccessoryPricePerUnit('25000');
+          setNewAccessoryDesc('');
         }}
         title={activeDrawer === 'accessory-rental' ? 'Buat Kontrak Sewa Aksesoris Baru' : 'Buat Kontrak Sewa Tabung Baru'}
       >
@@ -697,54 +750,139 @@ export default function Home() {
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {activeDrawer === 'accessory-rental' ? "Pilih Aksesoris *" : "Pilih Tabung Oksigen *"}
               </label>
-              {activeDrawer === 'rental' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsNewCylinder(!isNewCylinder);
-                    setRentalForm(prev => ({ ...prev, cylinderId: '' }));
-                    setNewCylinderSerialNo('');
-                    setNewCylinderSize('1m3');
-                  }}
-                  className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
-                >
-                  {isNewCylinder ? (
-                    <>
-                      <Database className="w-3.5 h-3.5" />
-                      <span>Pilih dari Daftar</span>
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Tabung Baru</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNewCylinder(!isNewCylinder);
+                  setRentalForm(prev => ({ ...prev, cylinderId: '' }));
+                  setNewCylinderSerialNo('');
+                  setNewCylinderSize(activeDrawer === 'accessory-rental' ? 'Pcs' : '1m3');
+                  setNewCylinderType('');
+                  setShowNewAccessoryTypeForm(false);
+                  setNewAccessoryName('');
+                  setNewAccessoryPricePerUnit('25000');
+                  setNewAccessoryDesc('');
+                }}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer flex items-center gap-1"
+              >
+                {isNewCylinder ? (
+                  <>
+                    <Database className="w-3.5 h-3.5" />
+                    <span>Pilih dari Daftar</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{activeDrawer === 'accessory-rental' ? 'Aksesoris Baru' : 'Tabung Baru'}</span>
+                  </>
+                )}
+              </button>
             </div>
 
-            {isNewCylinder && activeDrawer === 'rental' ? (
-              <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
-                <Input
-                  label="Nomor Serial Tabung (SN) *"
-                  id="newCylinderSerialNo"
-                  placeholder="e.g. SN-OX-9999"
-                  value={newCylinderSerialNo}
-                  onChange={e => setNewCylinderSerialNo(e.target.value)}
-                  required
-                />
-                <Select
-                  label="Ukuran Volume Tabung *"
-                  id="newCylinderSize"
-                  value={newCylinderSize}
-                  onChange={e => setNewCylinderSize(e.target.value as any)}
-                  options={[
-                    { value: '1m3', label: '1 m³' },
-                    { value: '2m3', label: '2 m³' },
-                    { value: '6m3', label: '6 m³' }
-                  ]}
-                />
-              </div>
+            {isNewCylinder ? (
+              activeDrawer === 'accessory-rental' ? (
+                <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                  <Input
+                    label="Nomor Serial Aksesoris (SN) *"
+                    id="newCylinderSerialNo"
+                    placeholder="e.g. REG-NES-001"
+                    value={newCylinderSerialNo}
+                    onChange={e => setNewCylinderSerialNo(e.target.value)}
+                    required
+                  />
+                  {showNewAccessoryTypeForm ? (
+                    <div className="p-3 border border-border bg-muted/10 rounded-lg space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-foreground">Tipe Aksesoris Baru</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewAccessoryTypeForm(false);
+                            setNewAccessoryName('');
+                            setNewAccessoryPricePerUnit('25000');
+                            setNewAccessoryDesc('');
+                          }}
+                          className="text-xs text-primary font-semibold hover:underline"
+                        >
+                          ← Pilih Tipe
+                        </button>
+                      </div>
+                      <Input
+                        label="Nama Aksesoris *"
+                        id="newAccName"
+                        placeholder="e.g. Sewa Humidifier Medis"
+                        value={newAccessoryName}
+                        onChange={e => setNewAccessoryName(e.target.value)}
+                        required
+                      />
+                      <Input
+                        label="Biaya Sewa per Unit (Rp) *"
+                        id="newAccPrice"
+                        isRupiah={true}
+                        placeholder="e.g. 25000"
+                        value={newAccessoryPricePerUnit}
+                        onChange={e => setNewAccessoryPricePerUnit(e.target.value)}
+                        required
+                      />
+                      <Textarea
+                        label="Keterangan / Deskripsi"
+                        id="newAccDesc"
+                        placeholder="e.g. Sewa botol pelembab udara"
+                        value={newAccessoryDesc}
+                        onChange={e => setNewAccessoryDesc(e.target.value)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 w-full">
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Nama / Tipe Aksesoris *
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewAccessoryTypeForm(true)}
+                          className="text-xs text-primary font-semibold hover:underline"
+                        >
+                          + Tipe Baru
+                        </button>
+                      </div>
+                      <Select
+                        id="newCylinderType"
+                        value={newCylinderType}
+                        onChange={e => setNewCylinderType(e.target.value)}
+                        options={[
+                          { value: '', label: '-- Pilih Tipe Aksesoris --' },
+                          ...oxygenTypes
+                            .filter(t => t.name.toLowerCase().includes('sewa') || t.name.toLowerCase().includes('regulator') || t.name.toLowerCase().includes('troli'))
+                            .map(t => ({ value: t.name, label: t.name }))
+                        ]}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
+                  <Input
+                    label="Nomor Serial Tabung (SN) *"
+                    id="newCylinderSerialNo"
+                    placeholder="e.g. SN-OX-9999"
+                    value={newCylinderSerialNo}
+                    onChange={e => setNewCylinderSerialNo(e.target.value)}
+                    required
+                  />
+                  <Select
+                    label="Ukuran Volume Tabung *"
+                    id="newCylinderSize"
+                    value={newCylinderSize as any}
+                    onChange={e => setNewCylinderSize(e.target.value as any)}
+                    options={[
+                      { value: '1m3', label: '1 m³' },
+                      { value: '2m3', label: '2 m³' },
+                      { value: '6m3', label: '6 m³' }
+                    ]}
+                  />
+                </div>
+              )
             ) : (
               <Select
                 id="rentCylinder"

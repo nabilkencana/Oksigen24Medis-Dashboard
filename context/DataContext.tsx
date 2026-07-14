@@ -565,36 +565,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     let socket: WebSocket | null = null;
     let reconnectTimeout: any = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
 
     const connect = () => {
-      console.log('[WS] Connecting to real-time events...');
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        console.warn('[WS] Max reconnection attempts reached. Real-time updates via WebSockets are disabled.');
+        return;
+      }
+
+      console.log(`[WS] Connecting to real-time events... (Attempt ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
       const wsUrl = BASE_URL.replace(/^http/, 'ws');
-      socket = new WebSocket(wsUrl);
+      
+      try {
+        socket = new WebSocket(wsUrl);
 
-      socket.onopen = () => {
-        console.log('[WS] Connected to Realtime Gateway successfully');
-      };
+        socket.onopen = () => {
+          console.log('[WS] Connected to Realtime Gateway successfully');
+          reconnectAttempts = 0;
+        };
 
-      socket.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          if (msg.event === 'db_change') {
-            console.log('[WS] DB Change detected:', msg.payload);
-            refreshAllData();
+        socket.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.event === 'db_change') {
+              console.log('[WS] DB Change detected:', msg.payload);
+              refreshAllData();
+            }
+          } catch (e) {
+            console.error('[WS] Failed to parse message:', e);
           }
-        } catch (e) {
-          console.error('[WS] Failed to parse message:', e);
-        }
-      };
+        };
 
-      socket.onerror = (err) => {
-        console.error('[WS] WebSocket Error:', err);
-      };
+        socket.onerror = () => {
+          console.warn('[WS] WebSocket connection failed. WebSockets might not be supported or allowed by the server configuration.');
+        };
 
-      socket.onclose = () => {
-        console.log('[WS] Connection closed. Reconnecting in 5 seconds...');
-        reconnectTimeout = setTimeout(connect, 5000);
-      };
+        socket.onclose = () => {
+          reconnectAttempts++;
+          const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 30000);
+          console.log(`[WS] Connection closed. Reconnecting in ${delay / 1000} seconds...`);
+          reconnectTimeout = setTimeout(connect, delay);
+        };
+      } catch (e) {
+        console.warn('[WS] Failed to initialize WebSocket:', e);
+        reconnectAttempts++;
+        const delay = Math.min(5000 * Math.pow(2, reconnectAttempts - 1), 30000);
+        reconnectTimeout = setTimeout(connect, delay);
+      }
     };
 
     connect();

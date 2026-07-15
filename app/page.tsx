@@ -151,11 +151,11 @@ export default function Home() {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const label = d.toLocaleString('id-ID', { month: 'short' });
       const yearMonth = d.toISOString().substring(0, 7); // "YYYY-MM"
-      
+
       const value = transactions
         .filter(t => t.date.startsWith(yearMonth) && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
         .reduce((sum, t) => sum + t.amount, 0);
-        
+
       result.push({ label, value });
     }
     return result;
@@ -173,7 +173,7 @@ export default function Home() {
   // Quick Action form submissions
   const handleRentalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     let targetCustomerId = rentalForm.customerId;
     let targetCylinderId = rentalForm.cylinderId;
 
@@ -406,7 +406,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      
+
       {/* Welcome banner */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-card border border-border rounded-xl shadow-xs">
         <div>
@@ -421,7 +421,7 @@ export default function Home() {
 
       {/* KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
+
         {/* Today Revenue */}
         <Card>
           <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
@@ -532,13 +532,13 @@ export default function Home() {
       {(() => {
         const userRole = String(user?.role?.name || user?.role || 'OWNER').toUpperCase();
         const quickActions = [
-          { label: 'Sewa Tabung Baru',   icon: <Plus className="w-3.5 h-3.5" />,                                           onClick: () => setActiveDrawer('rental'),                      roles: ['OWNER','ADMIN','WAREHOUSE'], primary: true },
-          { label: 'Sewa Aksesoris Baru', icon: <Plus className="w-3.5 h-3.5" />,                                          onClick: () => setActiveDrawer('accessory-rental'),            roles: ['OWNER','ADMIN','WAREHOUSE'], primary: true },
-          { label: 'Kembalikan Tabung',  icon: <Clock className="w-3.5 h-3.5 text-orange-500" />,                          onClick: () => router.push('/transactions?tab=return'),         roles: ['OWNER','ADMIN','WAREHOUSE'] },
-          { label: 'Kirim Refill Vendor',icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />,                        onClick: () => setActiveDrawer('refill'),                       roles: ['OWNER','ADMIN','WAREHOUSE'] },
-          { label: 'POS Kasir Ritel',    icon: <DollarSign className="w-3.5 h-3.5 text-purple-500" />,                     onClick: () => setActiveDrawer('sale'),                         roles: ['OWNER','ADMIN','FINANCE'] },
-          { label: 'Beli Restock Baru',  icon: <PackageCheck className="w-3.5 h-3.5 text-emerald-500" />,                  onClick: () => router.push('/transactions?tab=restock'),        roles: ['OWNER','ADMIN','WAREHOUSE'] },
-          { label: 'Catat Kas Keluar',   icon: <FileText className="w-3.5 h-3.5 text-rose-500" />,                         onClick: () => setActiveDrawer('expense'),                      roles: ['OWNER','ADMIN','FINANCE'] },
+          { label: 'Sewa Tabung Baru', icon: <Plus className="w-3.5 h-3.5" />, onClick: () => setActiveDrawer('rental'), roles: ['OWNER', 'ADMIN', 'WAREHOUSE'], primary: true },
+          { label: 'Sewa Aksesoris Baru', icon: <Plus className="w-3.5 h-3.5" />, onClick: () => setActiveDrawer('accessory-rental'), roles: ['OWNER', 'ADMIN', 'WAREHOUSE'], primary: true },
+          { label: 'Kembalikan Tabung', icon: <Clock className="w-3.5 h-3.5 text-orange-500" />, onClick: () => router.push('/transactions?tab=return'), roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+          { label: 'Kirim Refill Vendor', icon: <RefreshCw className="w-3.5 h-3.5 text-blue-500" />, onClick: () => setActiveDrawer('refill'), roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+          { label: 'POS Kasir Ritel', icon: <DollarSign className="w-3.5 h-3.5 text-purple-500" />, onClick: () => setActiveDrawer('sale'), roles: ['OWNER', 'ADMIN', 'FINANCE'] },
+          { label: 'Beli Restock Baru', icon: <PackageCheck className="w-3.5 h-3.5 text-emerald-500" />, onClick: () => router.push('/transactions?tab=restock'), roles: ['OWNER', 'ADMIN', 'WAREHOUSE'] },
+          { label: 'Catat Kas Keluar', icon: <FileText className="w-3.5 h-3.5 text-rose-500" />, onClick: () => setActiveDrawer('expense'), roles: ['OWNER', 'ADMIN', 'FINANCE'] },
         ].filter(a => !a.roles || a.roles.includes(userRole));
 
         return (
@@ -566,7 +566,7 @@ export default function Home() {
 
       {/* Analytics Charts Grid */}
       <div className="grid grid-cols-1 gap-6">
-        
+
         {/* Revenue Area Chart - Full Width */}
         <Card>
           <CardHeader>
@@ -581,7 +581,7 @@ export default function Home() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Recent Transactions Ledger */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -635,9 +635,8 @@ export default function Home() {
             <div className="relative border-l border-border pl-4 space-y-4 py-2 ml-2">
               {stockMovements.slice(0, 4).map(mvt => (
                 <div key={mvt.id} className="relative">
-                  <span className={`absolute -left-[21px] mt-1 flex h-2.5 w-2.5 rounded-full ring-4 ring-card ${
-                    mvt.type === 'Incoming' ? 'bg-emerald-500' : mvt.type === 'Outgoing' ? 'bg-blue-500' : 'bg-amber-500'
-                  }`} />
+                  <span className={`absolute -left-[21px] mt-1 flex h-2.5 w-2.5 rounded-full ring-4 ring-card ${mvt.type === 'Incoming' ? 'bg-emerald-500' : mvt.type === 'Outgoing' ? 'bg-blue-500' : 'bg-amber-500'
+                    }`} />
                   <div>
                     <p className="text-xs font-semibold text-foreground">{mvt.reason}</p>
                     <p className="text-3xs text-muted-foreground mt-0.5">
@@ -653,7 +652,7 @@ export default function Home() {
       </div>
 
       {/* DRAWERS (Forms Implementation) */}
-      
+
       {/* 1. SEWA TABUNG & AKSESORIS DRAWER */}
       <Drawer
         isOpen={activeDrawer === 'rental' || activeDrawer === 'accessory-rental'}
@@ -705,7 +704,7 @@ export default function Home() {
                 )}
               </button>
             </div>
-            
+
             {isNewCustomer ? (
               <div className="space-y-3 bg-muted/20 p-3 rounded-lg border border-border/80">
                 <Input
@@ -740,7 +739,7 @@ export default function Home() {
                 onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
                 options={[
                   { value: '', label: '-- Pilih Pelanggan --' },
-                  ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                  ...customers.map(c => ({ value: c.id, label: c.phone ? `${c.name} - ${c.phone}` : c.name }))
                 ]}
               />
             )}
@@ -996,7 +995,7 @@ export default function Home() {
                 if (c.status === 'At Vendor') statusLabel = 'Di Pabrik Vendor';
                 if (c.status === 'Maintenance') statusLabel = 'Perawatan';
                 if (c.status === 'Empty') statusLabel = 'Kosong';
-                
+
                 const canRefill = c.status === 'Empty' || c.status === 'Maintenance';
                 return {
                   value: c.id,
@@ -1115,7 +1114,7 @@ export default function Home() {
             onChange={e => setSaleForm({ ...saleForm, customerId: e.target.value })}
             options={[
               { value: '', label: '-- Pilih Pelanggan --' },
-              ...customers.map(c => ({ value: c.id, label: c.name }))
+              ...customers.map(c => ({ value: c.id, label: c.phone ? `${c.name} - ${c.phone}` : c.name }))
             ]}
           />
           <Select

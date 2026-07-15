@@ -938,7 +938,7 @@ export default function TransactionsPage() {
                       onChange={e => setPosCustomer(e.target.value)}
                       options={[
                         { value: '', label: '-- Pilih Pelanggan Ritel --' },
-                        ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                        ...customers.map(c => ({ value: c.id, label: c.phone ? `${c.name} - ${c.phone}` : c.name }))
                       ]}
                     />
                   ) : (
@@ -1329,7 +1329,7 @@ export default function TransactionsPage() {
                 onChange={e => setRentalForm({ ...rentalForm, customerId: e.target.value })}
                 options={[
                   { value: '', label: '-- Pilih Pelanggan --' },
-                  ...customers.map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }))
+                  ...customers.map(c => ({ value: c.id, label: c.phone ? `${c.name} - ${c.phone}` : c.name }))
                 ]}
               />
             )}

@@ -6,21 +6,16 @@ Aplikasi ini dibangun menggunakan arsitektur **Next.js 16 (App Router)**, **Reac
 
 ---
 
-## 🛠️ Arsitektur State & Database Lokal (In-Memory Database)
+## 🛠️ Arsitektur State & Integrasi Backend API
 
-Untuk menghadirkan pengalaman purwarupa (prototype) yang **100% fungsional dan interaktif tanpa backend API**, sistem ini menggunakan arsitektur basis data lokal:
+Sistem ini telah terintegrasi secara penuh dengan NestJS backend API dan PostgreSQL database untuk sinkronisasi data yang persisten secara real-time. Jika token autentikasi tersedia, sistem akan:
 
-1. **Sinkronisasi `localStorage`**:
-   Semua data transaksi, penambahan pelanggan, mutasi stok, hingga persetujuan biaya operasional disimpan langsung di dalam browser pengguna melalui berkas `context/DataContext.tsx`.
-2. **State Management (`useData`)**:
-   Penyediaan hook global `useData()` yang memancarkan state reaktif ke seluruh komponen modul. Aksi penulisan (write/update) otomatis meregenerasi tabel, memperbarui grafik visual, serta memperbarui riwayat mutasi logistik secara real-time.
-3. **Data Awal (Seeding Data)**:
-   Berkas `context/mockData.ts` memancarkan data awal realistis berbahasa Indonesia yang terdiri dari:
-   - **100 Customer** (data kontak lengkap, domisili wilayah Bandung/Jakarta, joined date).
-   - **50 Vendor Mitra** (pabrik gas isi ulang, penyuplai regulator, dll).
-   - **100 Tabung Oksigen** (tipe kemurnian gas, ukuran volume 1m³, 2m³, 6m³).
-   - **100 Produk Retail** ( regulator, masker oksigen, selang hidung, troli baja).
-   - **500+ Riwayat Transaksi** (sewa, isi ulang, pembelian grosir, struk kasir, biaya kantor).
+1. **Sinkronisasi State Global (`useData`)**:
+   Mengambil data master dan transaksi secara langsung dari API backend (seperti `/inventory/customers`, `/transactions/rentals`, dll.) dan mengaturnya di dalam berkas `context/DataContext.tsx`.
+2. **Real-time Event Synchronization (WebSockets)**:
+   Menerima sinyal perubahan database dari backend melalui koneksi WebSocket Gateway aktif untuk merefresh data secara otomatis tanpa reload halaman.
+3. **Backup Caching & Offline Mocking**:
+   Menggunakan `localStorage` sebagai cache data ERP untuk render instan saat awal memuat aplikasi, serta berkas `context/mockData.ts` sebagai generator data statis (mock data) cadangan.
 
 ---
 
@@ -204,6 +199,29 @@ Pengguna dapat menekan kombinasi tombol `Cmd+K` (macOS) atau `Ctrl+K` (Windows/L
 - Memungkinkan pencarian instan ke seluruh database lokal (Cari Pelanggan, cari Vendor, cari Serial Number Tabung Oksigen, atau cari Katalog Produk).
 - Klik pada hasil pencarian otomatis menutup modal dan mengarahkan rute halaman ke modul yang dituju, lengkap dengan penulisan query parameter pencarian instan pada tabel tujuan.
 - Menyediakan tombol navigasi cepat ke antrean isi ulang, kasir POS, pengembalian rental, dan pencatatan biaya operasional.
+
+## 🛠️ Pembaruan Integrasi Backend & Fitur Terkini
+
+Sistem dashboard ERP ini telah disesuaikan agar berjalan selaras dengan pembaruan backend dan database terbaru:
+
+1. **Pembaruan Aset & Pendaftaran Vendor**:
+   * **Penghapusan Kolom Email Vendor**: Pendaftaran dan pembaruan data vendor (Supplier) kini tidak lagi mengirimkan atau memerlukan alamat email ke backend API, sejalan dengan penghapusan kolom tersebut pada database backend.
+   * **Pembersihan Data Aset**: Data tabung sirkulasi fisik (seperti `CYL-1M3`, `CYL-6M3`) kini dikelola secara eksklusif dalam database tabel `cylinders` dan tidak dicampur ke tabel produk retail `products`.
+2. **Kalkulasi & Breakdown Distribusi Sewa**:
+   * Halaman utama (Dashboard) dan halaman laporan (Reports Hub) kini menyajikan sub-kalkulasi visual reaktif mengenai sebaran jenis aset sewa aktif:
+     * **Tabung Besar**: Tabung sewa aktif berukuran `6m3`.
+     * **Tabung Kecil**: Tabung sewa aktif berukuran selain `6m3`/`PCS` dan serial number tidak diawali `REG-`, `TRL-`, `ACC-`.
+     * **Regulator / Aksesoris**: Regulator sewa aktif diawali SN `REG-` atau berukuran `PCS`.
+3. **Override Manual Biaya Sewa (`totalAmount`)**:
+   * API client pada drawer kontrak sewa baru telah disesuaikan untuk mengirimkan properti `totalAmount` (berdasarkan input biaya sewa manual dari pengguna) ke backend API `/transactions/rentals`, sehingga backend dapat menyimpan nilai harga sewa kustom tersebut secara persisten.
+4. **Fungsionalitas Filter & Tabel Rekapitulasi Pendapatan**:
+   * **Preset Rentang Tanggal Otomatis**: Memilih periode laporan (Harian, Bulanan, Tahunan) otomatis memperbarui tanggal mulai dan tanggal selesai dengan preset default (Harian: 7 hari terakhir, Bulanan: 30 hari terakhir, Tahunan: tahun berjalan kalender 1 Jan - 31 Des).
+   * **Tabel Rekapitulasi Dinamis**: Menampilkan tabel pratinjau yang menyesuaikan dengan periode pilihan:
+     * **Harian (Daily)**: Menampilkan detail transaksi per transaksi kasir.
+     * **Bulanan (Monthly)**: Menampilkan ringkasan aggregate harian (jumlah transaksi, tipe layanan, sum cash/transfer/qris/total).
+     * **Tahunan (Yearly)**: Menampilkan ringkasan aggregate bulanan (nama bulan, jumlah transaksi, tipe layanan, sum cash/transfer/qris/total).
+   * **Visualisasi Chart Dinamis**: Menyajikan chart tren pendapatan yang terformat dinamis sesuai periode yang dipilih (menampilkan baris harian pada opsi Harian, dan visual bulanan Jan-Des pada opsi Tahunan).
+   * **Fix Timezone Offset**: Memperbaiki bug pergeseran zona waktu pada penarikan tren pendapatan bulanan yang sebelumnya menyebabkan grafik terlihat flat 0.
 
 ---
 

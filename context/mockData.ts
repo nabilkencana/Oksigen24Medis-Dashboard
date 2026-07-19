@@ -15,7 +15,7 @@ export interface Vendor {
   name: string;
   companyName: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
   status: 'Active' | 'Inactive';
 }

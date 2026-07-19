@@ -136,14 +136,12 @@ export default function InventoryPage() {
     companyName: string;
     name: string;
     phone: string;
-    email: string;
     address: string;
     status: 'Active' | 'Inactive';
   }>({
     companyName: '',
     name: '',
     phone: '',
-    email: '',
     address: '',
     status: 'Active'
   });
@@ -170,7 +168,7 @@ export default function InventoryPage() {
     });
     setProductForm({ name: '', category: 'Aksesoris', stock: '50', cost: '15000', price: '25000', description: '' });
     setCustomerForm({ name: '', phone: '', address: '', status: 'Active' });
-    setVendorForm({ companyName: '', name: '', phone: '', email: '', address: '', status: 'Active' });
+    setVendorForm({ companyName: '', name: '', phone: '', address: '', status: 'Active' });
   };
 
   // -------------------------------------------------------------
@@ -367,7 +365,6 @@ export default function InventoryPage() {
       companyName: v.companyName,
       name: v.name,
       phone: v.phone,
-      email: v.email,
       address: v.address,
       status: v.status
     });
@@ -717,7 +714,6 @@ export default function InventoryPage() {
                   <TableHead>Nama Perusahaan</TableHead>
                   <TableHead>PIC / Sales</TableHead>
                   <TableHead>WhatsApp</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Status Kerja</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
@@ -729,7 +725,6 @@ export default function InventoryPage() {
                     <TableCell className="font-semibold text-foreground">{v.companyName}</TableCell>
                     <TableCell>{v.name}</TableCell>
                     <TableCell>{v.phone}</TableCell>
-                    <TableCell>{v.email}</TableCell>
                     <TableCell>
                       <Badge variant={v.status === 'Active' ? 'success' : 'secondary'}>
                         {v.status === 'Active' ? 'Aktif' : 'Nonaktif'}
@@ -1140,21 +1135,12 @@ export default function InventoryPage() {
             onChange={e => setVendorForm({ ...vendorForm, name: e.target.value })}
             required
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="WhatsApp / Telp PIC *"
-              id="vendPhone"
-              value={vendorForm.phone}
-              onChange={e => setVendorForm({ ...vendorForm, phone: e.target.value })}
-            />
-            <Input
-              label="Email Perusahaan"
-              id="vendEmail"
-              placeholder="e.g. info@samator.com"
-              value={vendorForm.email}
-              onChange={e => setVendorForm({ ...vendorForm, email: e.target.value })}
-            />
-          </div>
+          <Input
+            label="WhatsApp / Telp PIC *"
+            id="vendPhone"
+            value={vendorForm.phone}
+            onChange={e => setVendorForm({ ...vendorForm, phone: e.target.value })}
+          />
           <Textarea
             label="Alamat Pabrik / Kantor Pusat"
             id="vendAddress"

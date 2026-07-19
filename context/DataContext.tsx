@@ -708,7 +708,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         name: vend.companyName,
         phone: vend.phone,
-        email: vend.email || `${vend.companyName.toLowerCase().replace(/\s/g, '')}@vendor.com`,
         address: vend.address || ''
       })
     });
@@ -722,7 +721,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         name: vend.companyName,
         phone: vend.phone,
-        email: vend.email,
         address: vend.address,
         isActive: vend.status === undefined ? undefined : (vend.status === 'Active')
       })
@@ -997,6 +995,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         dueDate: new Date(rentalData.returnDate).toISOString(),
         cylinderIds: [rentalData.cylinderId],
         amountPaid: rentFeeVal,
+        totalAmount: Number(rentalData.rentalFee) !== undefined ? Number(rentalData.rentalFee) : undefined,
         notes: notesPayload
       })
     });

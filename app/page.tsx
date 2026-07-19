@@ -97,6 +97,29 @@ export default function Home() {
   const maintenanceCount = cylinders.filter(c => c.status === 'Maintenance').length;
   const lowStockProductsCount = products.filter(p => p.stock < 10).length;
 
+  // Breakdown of rented inventory matching backend logic
+  const rentedBigCylindersCount = cylinders.filter(c => 
+    c.status === 'Rented' && 
+    (c.size || '').toUpperCase() === '6M3'
+  ).length;
+
+  const rentedRegulatorsCount = cylinders.filter(c => 
+    c.status === 'Rented' && 
+    (((c.serialNo || '').toUpperCase().startsWith('REG-') || (c.size || '').toUpperCase() === 'PCS'))
+  ).length;
+
+  const rentedSmallCylindersCount = cylinders.filter(c => {
+    const statusRented = c.status === 'Rented';
+    const sz = (c.size || '').toUpperCase();
+    const sn = (c.serialNo || '').toUpperCase();
+    return statusRented && 
+           sz !== '6M3' && 
+           sz !== 'PCS' &&
+           !sn.startsWith('REG-') &&
+           !sn.startsWith('TRL-') &&
+           !sn.startsWith('ACC-');
+  }).length;
+
   // Monthly/Today revenue calculation
   const todayStr = new Date().toISOString().split('T')[0];
   const thisMonthStr = todayStr.substring(0, 7);
@@ -150,7 +173,9 @@ export default function Home() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const label = d.toLocaleString('id-ID', { month: 'short' });
-      const yearMonth = d.toISOString().substring(0, 7); // "YYYY-MM"
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const yearMonth = `${year}-${month}`;
 
       const value = transactions
         .filter(t => t.date.startsWith(yearMonth) && (t.type === 'Rental' || t.type === 'Sale') && t.status === 'Completed')
@@ -447,7 +472,7 @@ export default function Home() {
 
         {/* Active Rentals */}
         <Card>
-          <CardContent className="p-5 pt-5 flex flex-col justify-between h-32">
+          <CardContent className="p-5 pt-5 flex flex-col justify-between min-h-32 h-auto">
             <div className="flex justify-between items-start">
               <span className="text-3xs font-bold text-muted-foreground uppercase tracking-wider">Rental Aktif</span>
               <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-500">
@@ -456,13 +481,20 @@ export default function Home() {
             </div>
             <div>
               <p className="text-xl font-bold tracking-tight">{activeRentalsCount} <span className="text-2xs text-muted-foreground font-medium">Tabung</span></p>
+              <div className="flex gap-1.5 mt-1.5 text-4xs text-muted-foreground font-semibold font-sans">
+                <span className="text-purple-600 dark:text-purple-400">Besar: <strong className="text-foreground font-bold">{rentedBigCylindersCount}</strong></span>
+                <span>•</span>
+                <span className="text-blue-600 dark:text-blue-400">Kecil: <strong className="text-foreground font-bold">{rentedSmallCylindersCount}</strong></span>
+                <span>•</span>
+                <span className="text-pink-600 dark:text-pink-400">Reg: <strong className="text-foreground font-bold">{rentedRegulatorsCount}</strong></span>
+              </div>
               {activeRentalsGrowthPct !== 0 ? (
                 <p className={`text-4xs font-bold mt-1.5 flex items-center gap-0.5 ${activeRentalsGrowthPct > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                   {activeRentalsGrowthPct > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                  {activeRentalsGrowthPct > 0 ? '+' : ''}{activeRentalsGrowthPct.toFixed(1)}% <span className="text-muted-foreground font-medium font-sans">vs minggu lalu</span>
+                  {activeRentalsGrowthPct > 0 ? '+' : ''}{activeRentalsGrowthPct.toFixed(1)}% <span className="text-muted-foreground font-medium font-sans">vs mgg lalu</span>
                 </p>
               ) : (
-                <p className="text-4xs text-muted-foreground font-medium mt-1.5">Stabil vs minggu lalu</p>
+                <p className="text-4xs text-muted-foreground font-medium mt-1.5">Stabil vs mgg lalu</p>
               )}
             </div>
           </CardContent>
